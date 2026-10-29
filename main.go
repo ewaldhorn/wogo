@@ -22,7 +22,7 @@ func main() {
 	fmt.Println()
 
 	compiler := &compiler.Compiler{}
-	compiler.Compile(src)
+	writeTargetFile(targetFile, compiler.Compile(src))
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -34,4 +34,13 @@ func readInputSourceFile(src string) string {
 	}
 
 	return string(content)
+}
+
+// ------------------------------------------------------------------------------------------------
+func writeTargetFile(tgt, data string) {
+	err := os.WriteFile(tgt, []byte(data), 0644)
+	if err != nil {
+		fmt.Println("Error writing output file:", err)
+		exitUnableToWritingOutputFile()
+	}
 }

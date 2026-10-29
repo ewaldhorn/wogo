@@ -17,7 +17,7 @@ type Compiler struct {
 }
 
 // ------------------------------------------------------------------------------------------------
-func (c *Compiler) Compile(src string) {
+func (c *Compiler) Compile(src string) string {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, "calc.go", src, 0)
 	if err != nil {
@@ -38,7 +38,7 @@ func (c *Compiler) Compile(src string) {
 	c.indent--
 	c.emit(")")
 
-	fmt.Println(c.buf.String())
+	return c.buf.String()
 }
 
 // ------------------------------------------------------------------------------------------------

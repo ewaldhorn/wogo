@@ -93,3 +93,8 @@ func exitInputFileNotFound() {
 func exitUnableToReadInputFile() {
 	os.Exit(constants.EXIT_CODE_ERROR_READING_INPUT_FILE)
 }
+
+// ------------------------------------------------------------------------------------------------
+func exitUnableToWritingOutputFile() {
+	os.Exit(constants.EXIT_CODE_ERROR_WRITING_OUTPUT_FILE)
+}
