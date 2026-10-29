@@ -68,6 +68,7 @@ func findAllTestFiles(patterns []string) ([]string, error) {
 	}
 
 	sort.Strings(files)
+
 	return files, nil
 }
 
