@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -65,6 +66,15 @@ func getArguments() (string, string) {
 }
 
 // ------------------------------------------------------------------------------------------------
+func validateFileExists(source string) {
+	_, err := os.Stat(source)
+	if errors.Is(err, os.ErrNotExist) {
+		fmt.Printf("File \"%v\" not found!\n", source)
+		exitInputFileNotFound()
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
 func exitOK() {
 	os.Exit(constants.EXIT_CODE_OK)
 }
@@ -72,4 +82,9 @@ func exitOK() {
 // ------------------------------------------------------------------------------------------------
 func exitNotEnoughArguments() {
 	os.Exit(constants.EXIT_CODE_NOT_ENOUGH_ARGUMENTS)
+}
+
+// ------------------------------------------------------------------------------------------------
+func exitInputFileNotFound() {
+	os.Exit(constants.EXIT_CODE_INPUT_FILE_NOT_FOUND)
 }

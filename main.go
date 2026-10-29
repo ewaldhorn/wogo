@@ -14,6 +14,8 @@ func main() {
 	fmt.Printf("Input source: %s\n", inputSource)
 	fmt.Printf("Target file : %s\n", targetFile)
 
+	validateFileExists(inputSource)
+
 	fmt.Println("Going to try to build:")
 	fmt.Println()
 
