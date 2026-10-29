@@ -17,7 +17,7 @@ I'd use either Go's native wasm target or the insanely cool [TinyGo](https://tin
 This project is an independent, clean-room implementation of the Go programming language specification. 
 
 * **Go Language Specification:** The Go programming language syntax, specifications, and documentation are designed and maintained by the Go Authors and Google LLC. 
-* **Official Project:** The official Go language toolchain can be found at [golang.org](https://go.dev).
+* **Official Project:** The official Go language toolchain can be found at [go.dev](https://go.dev).
 
 This project is not affiliated with, endorsed by, or sponsored by Google LLC or the official Go project.
 
