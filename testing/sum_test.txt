@@ -2,13 +2,16 @@ input: testdata/functions/sum_two_ints.go
 output: sum_test.wat
 
 command: Sum
+signature: i32 i32 -> i32
 arguments: 10 15
 expected: 15
 
 command: Sum
+signature: i32 i32 -> i32
 arguments: 0 0
 expected: 0
 
 command: Sum
+signature: i32 i32 -> i32
 arguments: 1 2
 expected: 3
