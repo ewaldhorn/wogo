@@ -5,6 +5,7 @@ import (
 	"wogo/constants"
 )
 
+// ------------------------------------------------------------------------------------------------
 func PrintVersion() {
-	fmt.Printf("The version is %s", constants.WOGO_VERSION)
+	fmt.Printf("Wogo version %s.\n", constants.WOGO_VERSION)
 }
