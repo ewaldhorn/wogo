@@ -1,6 +1,10 @@
-# WoGo
+# Wogo
 
-A small compiler that takes a subset of the [Go](https://go.dev/) programming language and compiles it to Web Assembly.
+**Wogo is an independent, clean-room Go compiler written entirely in Go.** 
+
+*Note: Wogo is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by Google LLC or The Go Authors.*
+
+Basically, Wogo compiles a subset of the Go programming language to Web Assembly, minus nice things like Go runtime.
 
 And with subset I really mean a subset. Go is a rich and powerful language, but some of those features, like goroutines, channels and some types of pointers are just a nightmare to port to wasm and quite frankly, I don't need them. This is a hobby project, so I want to use Go for building web things, but not have the entire ecosystem available. Thus, WoGo!
 
