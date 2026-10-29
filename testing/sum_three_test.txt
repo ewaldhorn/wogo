@@ -20,3 +20,9 @@ command: Sum
 signature: i32 i32 i32 -> i32
 arguments: 100 23 2
 expected: 125
+
+# Silly test, really, but it tests the test harness more than anything else
+command: Sum
+signature: i32 i32 i32 -> i32
+arguments: 0 0 0
+expected: 0

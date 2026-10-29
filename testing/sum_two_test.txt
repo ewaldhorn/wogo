@@ -16,6 +16,7 @@ signature: i32 i32 -> i32
 arguments: 1 2
 expected: 3
 
+# Added this one just to see that comments don't break stuff.
 command: Sum
 signature: i32 i32 -> i32
 arguments: 100 23
