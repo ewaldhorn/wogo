@@ -15,3 +15,8 @@ command: Sum
 signature: i32 i32 -> i32
 arguments: 1 2
 expected: 3
+
+command: Sum
+signature: i32 i32 -> i32
+arguments: 100 23
+expected: 123
