@@ -50,6 +50,25 @@ func flagIs(expected string) bool {
 }
 
 // ------------------------------------------------------------------------------------------------
+func validateEnoughArguments() {
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: wogo input_src output_file")
+		exitNotEnoughArguments()
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// Assume the correct number of arguments mean we have what we need
+func getArguments() (string, string) {
+	return os.Args[1], os.Args[2]
+}
+
+// ------------------------------------------------------------------------------------------------
 func exitOK() {
 	os.Exit(constants.EXIT_CODE_OK)
+}
+
+// ------------------------------------------------------------------------------------------------
+func exitNotEnoughArguments() {
+	os.Exit(constants.EXIT_CODE_NOT_ENOUGH_ARGUMENTS)
 }
