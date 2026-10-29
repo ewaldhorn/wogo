@@ -88,3 +88,8 @@ func exitNotEnoughArguments() {
 func exitInputFileNotFound() {
 	os.Exit(constants.EXIT_CODE_INPUT_FILE_NOT_FOUND)
 }
+
+// ------------------------------------------------------------------------------------------------
+func exitUnableToReadInputFile() {
+	os.Exit(constants.EXIT_CODE_ERROR_READING_INPUT_FILE)
+}

@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"wogo/internal/compiler"
 )
 
@@ -15,18 +17,29 @@ func main() {
 	fmt.Printf("Target file : %s\n", targetFile)
 
 	validateFileExists(inputSource)
+	src := readInputSourceFile(inputSource)
 
 	fmt.Println("Going to try to build:")
 	fmt.Println()
 
-	src := `
-	package calc
-
-	func Compute(a int32, b int32) int32 {
-		return (a + 10) * (b - 2)
-	}
-	`
-
 	compiler := &compiler.Compiler{}
 	compiler.Compile(src)
+}
+
+// ------------------------------------------------------------------------------------------------
+func readInputSourceFile(src string) string {
+	file, err := os.Open(src)
+	if err != nil {
+		fmt.Printf("Error accessing \"%s\": %v\n", src, err.Error())
+		exitUnableToReadInputFile()
+	}
+	defer file.Close()
+
+	content, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Printf("Error reading file content from \"%s\": %v\n", src, err.Error())
+		exitUnableToReadInputFile()
+	}
+
+	return string(content)
 }
