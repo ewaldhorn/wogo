@@ -1,5 +1,5 @@
 input: testdata/functions/sum_two_ints.go
-output: tmp/sum.wat
+output: tmp/sum_two.wat
 
 command: Sum
 signature: i32 i32 -> i32

@@ -1,0 +1,22 @@
+input: testdata/functions/sum_three_ints.go
+output: tmp/sum_three.wat
+
+command: Sum
+signature: i32 i32 i32 -> i32
+arguments: 10 15 0
+expected: 25
+
+command: Sum
+signature: i32 i32 i32 -> i32
+arguments: 0 0 1
+expected: 1
+
+command: Sum
+signature: i32 i32 i32 -> i32
+arguments: 1 2 1
+expected: 4
+
+command: Sum
+signature: i32 i32 i32 -> i32
+arguments: 100 23 2
+expected: 125
