@@ -53,6 +53,7 @@ func flagIs(expected string) bool {
 func validateEnoughArguments() {
 	if len(os.Args) < 3 {
 		fmt.Println("Usage: wogo input_src output_file")
+		fmt.Println("Example: wogo mycoolfile.go bundle.wat")
 		exitNotEnoughArguments()
 	}
 }
