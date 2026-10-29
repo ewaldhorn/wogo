@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"wogo/internal/compiler"
 )
@@ -28,14 +27,7 @@ func main() {
 
 // ------------------------------------------------------------------------------------------------
 func readInputSourceFile(src string) string {
-	file, err := os.Open(src)
-	if err != nil {
-		fmt.Printf("Error accessing \"%s\": %v\n", src, err.Error())
-		exitUnableToReadInputFile()
-	}
-	defer file.Close()
-
-	content, err := io.ReadAll(file)
+	content, err := os.ReadFile(src)
 	if err != nil {
 		fmt.Printf("Error reading file content from \"%s\": %v\n", src, err.Error())
 		exitUnableToReadInputFile()
