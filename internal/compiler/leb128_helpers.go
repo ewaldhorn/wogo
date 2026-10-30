@@ -9,8 +9,8 @@ import "bytes"
 // ================================================================================================
 
 // ------------------------------------------------------------------------------------------------
-// writeVarUInt encodes an unsigned integer using unsigned LEB128.
-func writeVarUInt(buf *bytes.Buffer, val uint32) {
+// writeVarUint encodes an unsigned integer using unsigned LEB128.
+func writeVarUint(buf *bytes.Buffer, val uint32) {
 	for val >= 0x80 {
 		buf.WriteByte(byte(val) | 0x80)
 		val >>= 7
