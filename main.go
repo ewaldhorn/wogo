@@ -24,8 +24,8 @@ func main() {
 	fmt.Println("Going to try to build:")
 	fmt.Println()
 
-	compiler := &compiler.Compiler{}
-	writeTargetFile(targetFile, compiler.Compile(src))
+	parser := &compiler.Parser{}
+	writeTargetFile(targetFile, parser.Parse(src))
 
 	// now that we have a WAT file, we can try to compile it to WASM
 	// this is highly experimental and stupid right now, but hey...

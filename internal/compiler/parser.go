@@ -10,49 +10,49 @@ import (
 )
 
 // ------------------------------------------------------------------------------------------------
-type Compiler struct {
+type Parser struct {
 	buf    bytes.Buffer
 	indent int
 	locals map[string]string // Map Go to Wasm local/param
 }
 
 // ------------------------------------------------------------------------------------------------
-func (c *Compiler) Compile(src string) string {
+func (p *Parser) Parse(src string) string {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, "calc.go", src, 0)
 	if err != nil {
 		panic(err)
 	}
 
-	c.emit("(module")
-	c.indent++
+	p.emit("(module")
+	p.indent++
 
 	for _, decl := range node.Decls {
 		if fn, ok := decl.(*ast.FuncDecl); ok {
-			if err := c.CompileFunc(fn); err != nil {
+			if err := p.ParseFunc(fn); err != nil {
 				panic(err)
 			}
 		}
 	}
 
-	c.indent--
-	c.emit(")")
+	p.indent--
+	p.emit(")")
 
-	return c.buf.String()
+	return p.buf.String()
 }
 
 // ------------------------------------------------------------------------------------------------
 // Helper to indent to the current indention level
-func (c *Compiler) emit(format string, args ...any) {
-	c.buf.WriteString(strings.Repeat("  ", c.indent))
-	fmt.Fprintf(&c.buf, format, args...)
-	c.buf.WriteByte('\n')
+func (p *Parser) emit(format string, args ...any) {
+	p.buf.WriteString(strings.Repeat("  ", p.indent))
+	fmt.Fprintf(&p.buf, format, args...)
+	p.buf.WriteByte('\n')
 }
 
 // ------------------------------------------------------------------------------------------------
-// Compile ast.FuncDecl into WAT syntax
-func (c *Compiler) CompileFunc(funcDecl *ast.FuncDecl) error {
-	c.locals = make(map[string]string)
+// Parse ast.FuncDecl into WAT syntax
+func (p *Parser) ParseFunc(funcDecl *ast.FuncDecl) error {
+	p.locals = make(map[string]string)
 	functionName := funcDecl.Name.Name
 
 	var params []string
@@ -60,7 +60,7 @@ func (c *Compiler) CompileFunc(funcDecl *ast.FuncDecl) error {
 		for _, field := range funcDecl.Type.Params.List {
 			wasmType := toWasmType(field.Type)
 			for _, name := range field.Names {
-				c.locals[name.Name] = "$" + name.Name
+				p.locals[name.Name] = "$" + name.Name
 				params = append(params, fmt.Sprintf("(param $%s %s)", name.Name, wasmType))
 			}
 		}
@@ -76,30 +76,30 @@ func (c *Compiler) CompileFunc(funcDecl *ast.FuncDecl) error {
 	paramStr := strings.Join(params, " ")
 	resultStr := strings.Join(results, " ")
 
-	c.emit("(func $%s (export %q) %s %s", functionName, functionName, paramStr, resultStr)
-	c.indent++
+	p.emit("(func $%s (export %q) %s %s", functionName, functionName, paramStr, resultStr)
+	p.indent++
 
 	for _, stmt := range funcDecl.Body.List {
-		if err := c.compileStatement(stmt); err != nil {
+		if err := p.parseStatement(stmt); err != nil {
 			return err
 		}
 	}
 
-	c.indent--
-	c.emit(")")
+	p.indent--
+	p.emit(")")
 	return nil
 }
 
 // ------------------------------------------------------------------------------------------------
-func (c *Compiler) compileStatement(stmt ast.Stmt) error {
+func (p *Parser) parseStatement(stmt ast.Stmt) error {
 	switch s := stmt.(type) {
 	case *ast.ReturnStmt:
 		for _, expr := range s.Results {
-			if err := c.compileExpression(expr); err != nil {
+			if err := p.parseExpression(expr); err != nil {
 				return err
 			}
 		}
-		c.emit("return")
+		p.emit("return")
 		return nil
 	default:
 		return fmt.Errorf("unsupported statement type: %T", stmt)
@@ -107,53 +107,53 @@ func (c *Compiler) compileStatement(stmt ast.Stmt) error {
 }
 
 // ------------------------------------------------------------------------------------------------
-// compileExpression flattens tree expressions into stack-based post-fix operations
-func (c *Compiler) compileExpression(expr ast.Expr) error {
+// parseExpression flattens tree expressions into stack-based post-fix operations
+func (p *Parser) parseExpression(expr ast.Expr) error {
 	switch e := expr.(type) {
 	case *ast.Ident:
-		wasmName, ok := c.locals[e.Name]
+		wasmName, ok := p.locals[e.Name]
 		if !ok {
 			return fmt.Errorf("unknown identifier: %s", e.Name)
 		}
-		c.emit("local.get %s", wasmName)
+		p.emit("local.get %s", wasmName)
 		return nil
 
 	case *ast.BasicLit:
 		if e.Kind == token.INT {
-			c.emit("i32.const %s", e.Value)
+			p.emit("i32.const %s", e.Value)
 			return nil
 		}
 		return fmt.Errorf("unsupported literal kind: %v", e.Kind)
 
 	case *ast.BinaryExpr:
 		// Push left operand to stack
-		if err := c.compileExpression(e.X); err != nil {
+		if err := p.parseExpression(e.X); err != nil {
 			return err
 		}
 		// Push right operand to stack
-		if err := c.compileExpression(e.Y); err != nil {
+		if err := p.parseExpression(e.Y); err != nil {
 			return err
 		}
 
 		// Emit arithmetic operation
 		switch e.Op {
 		case token.ADD:
-			c.emit("i32.add")
+			p.emit("i32.add")
 		case token.SUB:
-			c.emit("i32.sub")
+			p.emit("i32.sub")
 		case token.MUL:
-			c.emit("i32.mul")
+			p.emit("i32.mul")
 		case token.QUO:
-			c.emit("i32.div_s") // Signed division
+			p.emit("i32.div_s") // Signed division
 		case token.REM:
-			c.emit("i32.rem_s") // Signed modulo
+			p.emit("i32.rem_s") // Signed modulo
 		default:
 			return fmt.Errorf("unsupported operator: %s", e.Op)
 		}
 		return nil
 
 	case *ast.ParenExpr:
-		return c.compileExpression(e.X)
+		return p.parseExpression(e.X)
 
 	default:
 		return fmt.Errorf("unsupported expression type: %T", expr)
