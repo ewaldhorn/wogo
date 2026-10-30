@@ -22,10 +22,11 @@ const (
 )
 
 // ------------------------------------------------------------------------------------------------
+// writeSection writes a wasm binary section in the correct order and format.
 func writeSection(buf *bytes.Buffer, sectionID byte, payload []byte) {
-	buf.WriteByte(sectionID)
-	putUvarint(buf, uint32(len(payload)))
-	buf.Write(payload)
+	buf.WriteByte(sectionID)              // which section are we writing
+	putUvarint(buf, uint32(len(payload))) // how many bytes is it
+	buf.Write(payload)                    // the actual section
 }
 
 // ------------------------------------------------------------------------------------------------
