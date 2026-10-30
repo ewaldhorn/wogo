@@ -53,16 +53,20 @@ func flagIs(expected string) bool {
 // ------------------------------------------------------------------------------------------------
 func validateEnoughArguments() {
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: wogo input_src output_file")
+		fmt.Println("Usage: wogo input_src output_file [output_wasm_file]")
 		fmt.Println("Example: wogo mycoolfile.go bundle.wat")
+		fmt.Println("Example: wogo mycoolfile.go bundle.wat bundle.wasm")
 		exitNotEnoughArguments()
 	}
 }
 
 // ------------------------------------------------------------------------------------------------
 // Assume the correct number of arguments mean we have what we need
-func getArguments() (string, string) {
-	return os.Args[1], os.Args[2]
+func getArguments() (string, string, string) {
+	if len(os.Args) > 3 {
+		return os.Args[1], os.Args[2], os.Args[3]
+	}
+	return os.Args[1], os.Args[2], ""
 }
 
 // ------------------------------------------------------------------------------------------------

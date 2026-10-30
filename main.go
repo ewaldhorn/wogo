@@ -10,10 +10,13 @@ import (
 func main() {
 	parseFlags()
 	validateEnoughArguments()
-	inputSource, targetFile := getArguments()
+	inputSource, targetFile, wasmFile := getArguments()
 
 	fmt.Printf("Input source: %s\n", inputSource)
 	fmt.Printf("Target file : %s\n", targetFile)
+	if wasmFile != "" {
+		fmt.Printf("WASM file   : %s\n", wasmFile)
+	}
 
 	validateFileExists(inputSource)
 	src := readInputSourceFile(inputSource)
@@ -23,6 +26,10 @@ func main() {
 
 	compiler := &compiler.Compiler{}
 	writeTargetFile(targetFile, compiler.Compile(src))
+
+	if wasmFile != "" {
+		fmt.Println("WASM file is TODO")
+	}
 }
 
 // ------------------------------------------------------------------------------------------------
