@@ -55,3 +55,4 @@ command: Cube
 signature: i32 -> i32
 arguments: -3
 expected: -27
+

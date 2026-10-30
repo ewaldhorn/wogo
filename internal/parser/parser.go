@@ -155,6 +155,21 @@ func (p *Parser) parseExpression(expr ast.Expr) error {
 	case *ast.ParenExpr:
 		return p.parseExpression(e.X)
 
+	case *ast.UnaryExpr:
+		switch e.Op {
+		case token.SUB:
+			p.emit("i32.const 0")
+			if err := p.parseExpression(e.X); err != nil {
+				return err
+			}
+			p.emit("i32.sub")
+			return nil
+		case token.ADD:
+			return p.parseExpression(e.X)
+		default:
+			return fmt.Errorf("unsupported unary operator: %s", e.Op)
+		}
+
 	default:
 		return fmt.Errorf("unsupported expression type: %T", expr)
 	}

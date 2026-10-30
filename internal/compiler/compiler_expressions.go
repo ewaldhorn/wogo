@@ -60,6 +60,22 @@ func (c *Compiler) compileExpression(buf *bytes.Buffer, expr ast.Expr) error {
 	case *ast.ParenExpr:
 		return c.compileExpression(buf, e.X)
 
+	case *ast.UnaryExpr:
+		switch e.Op {
+		case token.SUB:
+			buf.WriteByte(OpI32Const)
+			putVarint(buf, 0)
+			if err := c.compileExpression(buf, e.X); err != nil {
+				return err
+			}
+			buf.WriteByte(OpI32Sub)
+			return nil
+		case token.ADD:
+			return c.compileExpression(buf, e.X)
+		default:
+			return fmt.Errorf("unsupported unary operator: %s", e.Op)
+		}
+
 	default:
 		return fmt.Errorf("unsupported expression type: %T", expr)
 	}
