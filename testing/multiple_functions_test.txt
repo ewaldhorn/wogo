@@ -1,0 +1,23 @@
+input: testdata/functions/multiple_functions.go
+output: tmp/multiple_functions.wat
+
+command: AddTwo
+signature: i32 i32 -> i32
+arguments: 10 25
+expected: 35
+
+command: AddThree
+signature: i32 i32 i32 -> i32
+arguments: 10 20 30
+expected: 60
+
+command: Triple
+signature: i32 -> i32
+arguments: 7
+expected: 21
+
+command: GetMagicNumber
+signature: -> i32
+arguments:
+expected: 1337
+
