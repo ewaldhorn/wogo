@@ -1,0 +1,23 @@
+input: testdata/functions/double_int.go
+output: tmp/double_int.wat
+
+command: Double
+signature: i32 -> i32
+arguments: 1
+expected: 2
+
+command: Double
+signature: i32 -> i32
+arguments: 5
+expected: 10
+
+command: Double
+signature: i32 -> i32
+arguments: 0
+expected: 0
+
+command: Double
+signature: i32 -> i32
+arguments: -7
+expected: -14
+

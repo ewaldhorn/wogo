@@ -1,0 +1,48 @@
+input: testdata/functions/divide_two_ints.go
+output: tmp/divide_two_ints.wat
+
+command: Divide
+signature: i32 i32 -> i32
+arguments: 12 3
+expected: 4
+
+command: Divide
+signature: i32 i32 -> i32
+arguments: 10 2
+expected: 5
+
+command: Divide
+signature: i32 i32 -> i32
+arguments: 7 2
+expected: 3
+
+command: Divide
+signature: i32 i32 -> i32
+arguments: 7 3
+expected: 2
+
+command: Divide
+signature: i32 i32 -> i32
+arguments: 10 -2
+expected: -5
+
+command: Divide
+signature: i32 i32 -> i32
+arguments: -10 2
+expected: -5
+
+command: Divide
+signature: i32 i32 -> i32
+arguments: -10 -2
+expected: 5
+
+command: Divide
+signature: i32 i32 -> i32
+arguments: -7 2
+expected: -3
+
+command: Divide
+signature: i32 i32 -> i32
+arguments: 0 5
+expected: 0
+
