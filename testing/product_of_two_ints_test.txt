@@ -1,0 +1,37 @@
+input: testdata/functions/multiply_two_ints.go
+output: tmp/multiply_two_ints.wat
+
+command: ProductOfTwoInts
+signature: i32 i32 -> i32
+arguments: 0 1
+expected: 0
+
+command: ProductOfTwoInts
+signature: i32 i32 -> i32
+arguments: 1 0
+expected: 0
+
+command: ProductOfTwoInts
+signature: i32 i32 -> i32
+arguments: 1 1
+expected: 1
+
+command: ProductOfTwoInts
+signature: i32 i32 -> i32
+arguments: 1 2
+expected: 2
+
+command: ProductOfTwoInts
+signature: i32 i32 -> i32
+arguments: 2 1
+expected: 2
+
+command: ProductOfTwoInts
+signature: i32 i32 -> i32
+arguments: 3 4
+expected: 12
+
+command: ProductOfTwoInts
+signature: i32 i32 -> i32
+arguments: 2 2
+expected: 4
