@@ -31,20 +31,24 @@ func writeSection(buf *bytes.Buffer, sectionID byte, payload []byte) {
 
 // ------------------------------------------------------------------------------------------------
 // writeTypeSection encodes the function signatures (ID 1).
+// TODO: See if there's a way in the future to collapse types and not repeat them but reuse, not
+// entirely sure if WebAssembly allows that, though I can't see why not.
 func writeTypeSection(buf *bytes.Buffer, signatures []funcSignature) {
 	if len(signatures) == 0 {
 		return
 	}
 
 	var payload bytes.Buffer
-	putUvarint(&payload, uint32(len(signatures)))
+	putUvarint(&payload, uint32(len(signatures))) // how many function types do we have here
+
 	for _, sig := range signatures {
 		payload.WriteByte(0x60) // func type indicator
 		putUvarint(&payload, uint32(len(sig.params)))
-		payload.Write(sig.params)
+		payload.Write(sig.params) // params accepts
 		putUvarint(&payload, uint32(len(sig.results)))
-		payload.Write(sig.results)
+		payload.Write(sig.results) // value(s) returned
 	}
+
 	writeSection(buf, SectionType, payload.Bytes())
 }
 
