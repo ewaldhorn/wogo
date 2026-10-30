@@ -1,0 +1,43 @@
+input: testdata/functions/literals.go
+output: tmp/literals.wat
+
+command: AddTen
+signature: i32 -> i32
+arguments: 5
+expected: 15
+
+command: AddTen
+signature: i32 -> i32
+arguments: -10
+expected: 0
+
+command: SubHundred
+signature: i32 -> i32
+arguments: 150
+expected: 50
+
+command: SubHundred
+signature: i32 -> i32
+arguments: 50
+expected: -50
+
+command: MultiplyByZero
+signature: i32 -> i32
+arguments: 999
+expected: 0
+
+command: NegativeConstant
+signature: i32 -> i32
+arguments: 50
+expected: 25
+
+command: NegativeConstant
+signature: i32 -> i32
+arguments: 25
+expected: 0
+
+command: ConstantOnly
+signature: -> i32
+arguments:
+expected: 42
+
