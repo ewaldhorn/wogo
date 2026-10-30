@@ -27,6 +27,8 @@ func main() {
 	compiler := &compiler.Compiler{}
 	writeTargetFile(targetFile, compiler.Compile(src))
 
+	// now that we have a WAT file, we can try to compile it to WASM
+	// this is highly experimental and stupid right now, but hey...
 	if wasmFile != "" {
 		fmt.Println("WASM file is TODO")
 	}
