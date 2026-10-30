@@ -1,0 +1,57 @@
+input: testdata/functions/single_argument.go
+output: tmp/single_argument.wat
+
+command: Identity
+signature: i32 -> i32
+arguments: 42
+expected: 42
+
+command: Identity
+signature: i32 -> i32
+arguments: -99
+expected: -99
+
+command: Negate
+signature: i32 -> i32
+arguments: 15
+expected: -15
+
+command: Negate
+signature: i32 -> i32
+arguments: -15
+expected: 15
+
+command: Negate
+signature: i32 -> i32
+arguments: 0
+expected: 0
+
+command: Double
+signature: i32 -> i32
+arguments: 7
+expected: 14
+
+command: Double
+signature: i32 -> i32
+arguments: -7
+expected: -14
+
+command: Square
+signature: i32 -> i32
+arguments: 5
+expected: 25
+
+command: Square
+signature: i32 -> i32
+arguments: -5
+expected: 25
+
+command: Cube
+signature: i32 -> i32
+arguments: 3
+expected: 27
+
+command: Cube
+signature: i32 -> i32
+arguments: -3
+expected: -27
