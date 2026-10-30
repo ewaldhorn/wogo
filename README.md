@@ -1,6 +1,6 @@
 # Wogo
 
-**Wogo is an independent, clean-room Go compiler written entirely in Go.** 
+**Wogo is an independent, clean-room Go-ish compiler written entirely in Go.** 
 
 *Note: Wogo is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by Google LLC or The Go Authors.*
 
