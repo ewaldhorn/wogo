@@ -1,16 +1,6 @@
 package compiler
 
 // ------------------------------------------------------------------------------------------------
-// Number types in WebAssembly.
-// See https://webassembly.github.io/spec/core/binary/types.html
-const (
-	TypeI32 byte = 0x7F
-	TypeI64 byte = 0x7E
-	TypeF32 byte = 0x7D
-	TypeF64 byte = 0x7C
-)
-
-// ------------------------------------------------------------------------------------------------
 // Opcodes in WebAssembly.
 // See https://webassembly.github.io/spec/core/binary/instructions.html
 // And https://webassembly.github.io/spec/core/appendix/index-instructions.html
