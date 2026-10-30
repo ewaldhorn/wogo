@@ -1,6 +1,8 @@
 package compiler
 
-import "bytes"
+import (
+	"bytes"
+)
 
 // ================================================================================================
 // Little Endian helpers.
@@ -9,8 +11,8 @@ import "bytes"
 // ================================================================================================
 
 // ------------------------------------------------------------------------------------------------
-// writeVarUint encodes an unsigned integer using unsigned LEB128.
-func writeVarUint(buf *bytes.Buffer, val uint32) {
+// putUvarint encodes an unsigned integer using unsigned LEB128.
+func putUvarint(buf *bytes.Buffer, val uint32) {
 	for val >= 0x80 {
 		buf.WriteByte(byte(val) | 0x80)
 		val >>= 7
@@ -19,8 +21,8 @@ func writeVarUint(buf *bytes.Buffer, val uint32) {
 }
 
 // ------------------------------------------------------------------------------------------------
-// writeVarInt encodes a signed integer using signed LEB128.
-func writeVarInt(buf *bytes.Buffer, val int32) {
+// putVarint encodes a signed integer using signed LEB128.
+func putVarint(buf *bytes.Buffer, val int32) {
 	for {
 		b := byte(val & 0x7F)
 		val >>= 7
