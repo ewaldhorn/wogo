@@ -1,0 +1,38 @@
+input: testdata/functions/subtract_two_ints.go
+output: tmp/subtract_two_ints.wat
+
+command: Subtract
+signature: i32 i32 -> i32
+arguments: 10 4
+expected: 6
+
+command: Subtract
+signature: i32 i32 -> i32
+arguments: 5 5
+expected: 0
+
+command: Subtract
+signature: i32 i32 -> i32
+arguments: 4 10
+expected: -6
+
+command: Subtract
+signature: i32 i32 -> i32
+arguments: 0 0
+expected: 0
+
+command: Subtract
+signature: i32 i32 -> i32
+arguments: 5 -3
+expected: 8
+
+command: Subtract
+signature: i32 i32 -> i32
+arguments: -5 -5
+expected: 0
+
+command: Subtract
+signature: i32 i32 -> i32
+arguments: -10 5
+expected: -15
+
