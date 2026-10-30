@@ -1,0 +1,38 @@
+input: testdata/functions/remainder_two_ints.go
+output: tmp/remainder_two_ints.wat
+
+command: Remainder
+signature: i32 i32 -> i32
+arguments: 10 3
+expected: 1
+
+command: Remainder
+signature: i32 i32 -> i32
+arguments: 10 5
+expected: 0
+
+command: Remainder
+signature: i32 i32 -> i32
+arguments: 14 4
+expected: 2
+
+command: Remainder
+signature: i32 i32 -> i32
+arguments: 1 2
+expected: 1
+
+command: Remainder
+signature: i32 i32 -> i32
+arguments: 0 5
+expected: 0
+
+command: Remainder
+signature: i32 i32 -> i32
+arguments: -7 3
+expected: -1
+
+command: Remainder
+signature: i32 i32 -> i32
+arguments: 7 -3
+expected: 1
+
