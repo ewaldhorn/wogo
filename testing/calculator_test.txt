@@ -1,0 +1,23 @@
+input: testdata/functions/calculator.go
+output: tmp/calculator.wat
+
+command: Add
+signature: i32 i32 -> i32
+arguments: 20 10
+expected: 30
+
+command: Sub
+signature: i32 i32 -> i32
+arguments: 20 10
+expected: 10
+
+command: Mul
+signature: i32 i32 -> i32
+arguments: 20 10
+expected: 200
+
+command: Div
+signature: i32 i32 -> i32
+arguments: 20 10
+expected: 2
+
