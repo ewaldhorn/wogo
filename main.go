@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"wogo/internal/compiler"
 	"wogo/internal/parser"
 )
 
@@ -27,10 +28,15 @@ func main() {
 	p := &parser.Parser{}
 	writeTargetFile(targetFile, p.Parse(src))
 
-	// now that we have a WAT file, we can try to compile it to WASM
-	// this is highly experimental and stupid right now, but hey...
+	// now that we have parsed the WAT without error, we can compile it to WASM
 	if wasmFile != "" {
-		fmt.Println("WASM file is TODO")
+		c := compiler.NewCompiler()
+		wasmBytes, err := c.Compile(src)
+		if err != nil {
+			fmt.Printf("Error compiling WASM: %v\n", err)
+			exitUnableToWritingOutputFile()
+		}
+		writeTargetBytes(wasmFile, wasmBytes)
 	}
 }
 
@@ -47,7 +53,12 @@ func readInputSourceFile(src string) string {
 
 // ------------------------------------------------------------------------------------------------
 func writeTargetFile(tgt, data string) {
-	err := os.WriteFile(tgt, []byte(data), 0644)
+	writeTargetBytes(tgt, []byte(data))
+}
+
+// ------------------------------------------------------------------------------------------------
+func writeTargetBytes(tgt string, data []byte) {
+	err := os.WriteFile(tgt, data, 0644)
 	if err != nil {
 		fmt.Println("Error writing output file:", err)
 		exitUnableToWritingOutputFile()
