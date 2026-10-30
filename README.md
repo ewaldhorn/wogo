@@ -12,6 +12,14 @@ And with subset I really mean a subset. Go is a rich and powerful language, but 
 
 I'd use either Go's native wasm target or the insanely cool [TinyGo](https://tinygo.org/) compiler for commercial work. WoGo is highly experimental and so far from complete or done it's not even funny.
 
+## Dev Environment
+
+I use Go (1.27.3) for development with WasmTime (wasmtime 50.0.0) for testing and Wat2Wasm (1.0.42) as a reference compiler to sanity check my output.
+
+- [Go](https://go.dev/)
+- [WasmTime](https://wasmtime.dev/)
+- [Wat2Wasm](https://github.com/webassembly/wabt)
+
 ## Acknowledgements & Attribution
 
 This project is an independent, clean-room implementation of the Go programming language specification. 
@@ -20,4 +28,3 @@ This project is an independent, clean-room implementation of the Go programming 
 * **Official Project:** The official Go language toolchain can be found at [go.dev](https://go.dev).
 
 This project is not affiliated with, endorsed by, or sponsored by Google LLC or the official Go project.
-
