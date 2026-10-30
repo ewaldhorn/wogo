@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"wogo/internal/compiler"
+	"wogo/internal/parser"
 )
 
 // ------------------------------------------------------------------------------------------------
@@ -242,7 +242,7 @@ func compileGoToWat(input, output string) (err error) {
 		return fmt.Errorf("read input %q: %w", input, err)
 	}
 
-	p := &compiler.Parser{}
+	p := &parser.Parser{}
 	wat := p.Parse(string(content))
 
 	if dir := filepath.Dir(output); dir != "" && dir != "." {

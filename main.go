@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"wogo/internal/compiler"
+	"wogo/internal/parser"
 )
 
 // ------------------------------------------------------------------------------------------------
@@ -24,8 +24,8 @@ func main() {
 	fmt.Println("Going to try to build:")
 	fmt.Println()
 
-	parser := &compiler.Parser{}
-	writeTargetFile(targetFile, parser.Parse(src))
+	p := &parser.Parser{}
+	writeTargetFile(targetFile, p.Parse(src))
 
 	// now that we have a WAT file, we can try to compile it to WASM
 	// this is highly experimental and stupid right now, but hey...

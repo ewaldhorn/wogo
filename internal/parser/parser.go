@@ -1,10 +1,10 @@
-package compiler
+package parser
 
 import (
 	"bytes"
 	"fmt"
 	"go/ast"
-	"go/parser"
+	goparser "go/parser"
 	"go/token"
 	"strings"
 )
@@ -19,7 +19,7 @@ type Parser struct {
 // ------------------------------------------------------------------------------------------------
 func (p *Parser) Parse(src string) string {
 	fset := token.NewFileSet()
-	node, err := parser.ParseFile(fset, "calc.go", src, 0)
+	node, err := goparser.ParseFile(fset, "calc.go", src, 0)
 	if err != nil {
 		panic(err)
 	}
