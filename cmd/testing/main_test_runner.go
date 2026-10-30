@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"wogo/internal/compiler"
 	"wogo/internal/parser"
 )
 
@@ -19,8 +20,13 @@ import (
 //
 // TODO: Add some colour for failures.
 func run() error {
+	var wasmMode bool
+	var watMode bool
+	flag.BoolVar(&wasmMode, "wasm", false, "run tests against compiled wasm binary")
+	flag.BoolVar(&watMode, "wat", false, "run tests against generated wat via wat2wasm")
+
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s <test-file-or-dir>...\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [-wasm|-wat] <test-file-or-dir>...\n", os.Args[0])
 	}
 	flag.Parse()
 
@@ -34,7 +40,10 @@ func run() error {
 		return err
 	}
 
-	runner := &Runner{}
+	runner := &Runner{
+		ForceWasm: wasmMode,
+		ForceWat:  watMode,
+	}
 
 	return runner.RunFiles(context.Background(), files)
 }
@@ -45,6 +54,8 @@ type Runner struct {
 	TotalPassed int
 	TotalFailed int
 	FilesFailed int
+	ForceWasm   bool
+	ForceWat    bool
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -89,7 +100,7 @@ func (r *Runner) RunFile(ctx context.Context, path string) (int, int, error) {
 		return 0, 0, fmt.Errorf("parse specification: %w", err)
 	}
 
-	return RunSpec(ctx, spec)
+	return r.RunSpec(ctx, spec)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -101,17 +112,36 @@ func (r *Runner) printSummary(totalFiles int) {
 }
 
 // ------------------------------------------------------------------------------------------------
-// RunSpec compiles the output WAT and executes every test case through the wasmtime CLI.
-func RunSpec(ctx context.Context, spec *Spec) (int, int, error) {
-	if err := ensureOutput(spec); err != nil {
-		return 0, 0, err
-	}
+// RunSpec compiles and executes every test case through the wasmtime CLI.
+func (r *Runner) RunSpec(ctx context.Context, spec *Spec) (int, int, error) {
+	isWasm := r.ForceWasm || (!r.ForceWat && strings.HasSuffix(strings.ToLower(spec.Output), ".wasm"))
 
-	wasmPath, cleanup, err := compileWatToWasm(ctx, spec.Output)
-	if err != nil {
-		return 0, 0, err
+	var wasmPath string
+	var cleanup func()
+
+	if isWasm {
+		// Compile Go source directly to WASM using the internal compiler
+		if strings.HasSuffix(strings.ToLower(spec.Output), ".wat") {
+			wasmPath = strings.TrimSuffix(spec.Output, filepath.Ext(spec.Output)) + ".wasm"
+		} else {
+			wasmPath = spec.Output
+		}
+		if err := compileGoToWasm(spec.Input, wasmPath); err != nil {
+			return 0, 0, err
+		}
+	} else {
+		// Compile Go source to WAT, then convert WAT to WASM via wat2wasm (reference compiler output)
+		if err := ensureOutput(spec); err != nil {
+			return 0, 0, err
+		}
+
+		var err error
+		wasmPath, cleanup, err = compileWatToWasm(ctx, spec.Output)
+		if err != nil {
+			return 0, 0, err
+		}
+		defer cleanup()
 	}
-	defer cleanup()
 
 	passed, failed := 0, 0
 	for i, tc := range spec.Tests {
@@ -133,6 +163,13 @@ func RunSpec(ctx context.Context, spec *Spec) (int, int, error) {
 	}
 
 	return passed, failed, nil
+}
+
+// ------------------------------------------------------------------------------------------------
+// RunSpec is a convenience wrapper for running a spec with default settings.
+func RunSpec(ctx context.Context, spec *Spec) (int, int, error) {
+	runner := &Runner{}
+	return runner.RunSpec(ctx, spec)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -252,6 +289,39 @@ func compileGoToWat(input, output string) (err error) {
 	}
 
 	if err := os.WriteFile(output, []byte(wat), 0644); err != nil {
+		return fmt.Errorf("write output %q: %w", output, err)
+	}
+
+	return nil
+}
+
+// ------------------------------------------------------------------------------------------------
+// compileGoToWasm compiles a Go input source file to a WASM output file using wogo's internal compiler.
+func compileGoToWasm(input, output string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("compiler panic: %v", r)
+		}
+	}()
+
+	content, err := os.ReadFile(input)
+	if err != nil {
+		return fmt.Errorf("read input %q: %w", input, err)
+	}
+
+	c := compiler.NewCompiler()
+	wasmBytes, err := c.Compile(string(content))
+	if err != nil {
+		return fmt.Errorf("compile %q: %w", input, err)
+	}
+
+	if dir := filepath.Dir(output); dir != "" && dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("create dir for output %q: %w", output, err)
+		}
+	}
+
+	if err := os.WriteFile(output, wasmBytes, 0644); err != nil {
 		return fmt.Errorf("write output %q: %w", output, err)
 	}
 
