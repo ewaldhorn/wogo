@@ -52,6 +52,7 @@ func readInputSourceFile(src string) string {
 }
 
 // ------------------------------------------------------------------------------------------------
+// TODO: Better error handling and report. OK for now while I'm still figuring things out.
 func writeTargetFile(tgt, data string) {
 	writeTargetBytes(tgt, []byte(data))
 }
