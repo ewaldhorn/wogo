@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>WoGo - Bonkers Go project to compile Go-ish code to WebAssembly - Progress</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <header>
+            <input type="checkbox" id="theme-toggle" hidden /> <label for="theme-toggle" class="toggle">🌓</label>
+        </header>
+        <h1>WoGo - Progress</h1>
+        <p>
+            I'm going to try and document progress for
+            <a href="https://github.com/ewaldhorn/wogo">WoGo</a> and keep an index of entries here,
+            but no promises.
+        </p>
+        <h2>WoGo Progress, if you can call it that.</h2>
+        <ul class="faq" role="list">
+            <ul>
+                <li>
+                    <h3>Sat 31 Oct 2026, 11:00</h3>
+                    <p>
+                        Spent some time this morning to make the repo public, yeah! And then I
+                        realised I never made provision for functions that take no arguments at all
+                        and added a simple test which showed my test framework couldn't handle it.
+                        Nor could the compiler.
+                    </p>
+                    <p>
+                        I see on
+                        <a href="https://developer.mozilla.org/en-US/docs/WebAssembly/Reference/Value_types">Mozilla</a>,
+                        as I suspected, that wasm doesn't have a bool. Instead, it seems using 0 and
+                        1 is the way to go, like back in my old C days.
+                    </p>
+                </li>
+            </ul>
+        </ul>
+        <hr>
+        <footer>
+            <p>
+                You probably want to visit the <a href="faq.html">frequently asked questions</a> page
+                as well or just go <a href="index.html">Home</a>.
+            </p>
+        </footer>
+    </body>
+</html>
