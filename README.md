@@ -12,6 +12,10 @@ And with subset I really mean a subset. Go is a rich and powerful language, but 
 
 I'd use either [Go](https://go.dev/)'s native wasm target or the insanely cool [TinyGo](https://tinygo.org/) compiler for commercial work. WoGo is highly experimental and so far from complete or done it's not even funny.
 
+## Why man? Why?!
+
+This is the most asked question, and, to be honest, I don't have a clear answer for it. I don't just code to earn a living, I also do it for, well, fun! I've been [tinkering with stuff](https://nofuss.co.za/toys/) forever and really enjoy it as part of my learning process. If I had to guess, I'd say this entire project is just me wanting to really dig deep into understanding WebAssembly better, since I feel like it's a powerful platform that I just don't know enough about. And let's face it, Go's a neat language with a wide range of applications. So being able to leverage that just feels like it will give me a lot of options.
+
 ## Dev Environment
 
 I use Go (1.27.3) for development with WasmTime (wasmtime 50.0.0) for testing and Wat2Wasm (1.0.42) as a reference compiler to sanity check my output.
