@@ -4,3 +4,11 @@ output: tmp/no_arguments.wat
 command: IsFalse
 signature: -> bool
 expected: false
+
+command: IsTrue
+signature: -> bool
+expected: true
+
+command: IsNotTrue
+signature: -> bool
+expected: false
