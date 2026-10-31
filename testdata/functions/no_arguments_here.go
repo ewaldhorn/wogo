@@ -11,3 +11,7 @@ func IsTrue() bool {
 func IsNotTrue() bool {
 	return !true
 }
+
+func IsNotFalse() bool {
+	return !false
+}

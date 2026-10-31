@@ -12,3 +12,7 @@ expected: true
 command: IsNotTrue
 signature: -> bool
 expected: false
+
+command: IsNotFalse
+signature: -> bool
+expected: true
