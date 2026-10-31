@@ -1,0 +1,6 @@
+input: testdata/functions/no_arguments_here.go
+output: tmp/no_arguments.wat
+
+command: IsFalse
+signature: -> bool
+expected: false
