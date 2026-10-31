@@ -16,6 +16,10 @@ I'd use either [Go](https://go.dev/)'s native wasm target or the insanely cool [
 
 This is the most asked question, and, to be honest, I don't have a clear answer for it. I don't just code to earn a living, I also do it for, well, fun! I've been [tinkering with stuff](https://nofuss.co.za/toys/) forever and really enjoy it as part of my learning process. If I had to guess, I'd say this entire project is just me wanting to really dig deep into understanding WebAssembly better, since I feel like it's a powerful platform that I just don't know enough about. And let's face it, Go's a neat language with a wide range of applications. So being able to leverage that just feels like it will give me a lot of options.
 
+## Dev Log and Docs
+
+I plan to have some [docs](https://ewaldhorn.github.io/wogo/) that I will try to maintain, now and then. No promises, as I often get sucked into coding and that's more fun that figuring out why my frigging html is broken, again.
+
 ## Dev Environment
 
 I use Go (1.27.3) for development with WasmTime (wasmtime 50.0.0) for testing and Wat2Wasm (1.0.42) as a reference compiler to sanity check my output.
