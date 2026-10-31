@@ -103,7 +103,11 @@ func (p *SpecParser) flush() error {
 		return nil
 	}
 	if !p.hasArguments {
-		return fmt.Errorf("test %q: missing arguments", p.current.Command)
+		if p.hasNoArguments() {
+			p.current.Arguments = nil
+		} else {
+			return fmt.Errorf("test %q: missing arguments", p.current.Command)
+		}
 	}
 	if !p.hasExpected {
 		return fmt.Errorf("test %q: missing expected", p.current.Command)
@@ -116,6 +120,18 @@ func (p *SpecParser) flush() error {
 	p.hasExpected = false
 
 	return nil
+}
+
+func (p *SpecParser) hasNoArguments() bool {
+	if !p.hasSignature || p.current == nil {
+		return false
+	}
+	parts := strings.Split(p.current.Signature, "->")
+	if len(parts) < 2 {
+		return false
+	}
+	params := strings.Fields(parts[0])
+	return len(params) == 0
 }
 
 // ------------------------------------------------------------------------------------------------

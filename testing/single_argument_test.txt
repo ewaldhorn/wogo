@@ -57,6 +57,5 @@ arguments: -3
 expected: -27
 
 command: IsFalse
-signature -> bool
-arguments:
+signature: -> bool
 expected: false

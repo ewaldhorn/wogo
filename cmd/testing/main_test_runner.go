@@ -217,12 +217,28 @@ func verifyResults(actual, expected []string) error {
 	}
 
 	for i := range expected {
-		if actual[i] != expected[i] {
+		if !matchesResult(actual[i], expected[i]) {
 			return fmt.Errorf("result %d: got %s, want %s", i, actual[i], expected[i])
 		}
 	}
 
 	return nil
+}
+
+func matchesResult(actual, expected string) bool {
+	if actual == expected {
+		return true
+	}
+
+	// WebAssembly represents booleans as i32 (0 for false, 1 for true)
+	if (actual == "0" && expected == "false") || (actual == "false" && expected == "0") {
+		return true
+	}
+	if (actual == "1" && expected == "true") || (actual == "true" && expected == "1") {
+		return true
+	}
+
+	return false
 }
 
 // ------------------------------------------------------------------------------------------------
