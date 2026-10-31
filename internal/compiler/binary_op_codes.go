@@ -9,6 +9,7 @@ const (
 	OpReturn   byte = 0x0F
 	OpLocalGet byte = 0x20
 	OpI32Const byte = 0x41
+	OpI32Eqz   byte = 0x45
 	OpI32Add   byte = 0x6A
 	OpI32Sub   byte = 0x6B
 	OpI32Mul   byte = 0x6C

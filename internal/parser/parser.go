@@ -176,6 +176,12 @@ func (p *Parser) parseExpression(expr ast.Expr) error {
 			return nil
 		case token.ADD:
 			return p.parseExpression(e.X)
+		case token.NOT:
+			if err := p.parseExpression(e.X); err != nil {
+				return err
+			}
+			p.emit("i32.eqz")
+			return nil
 		default:
 			return fmt.Errorf("unsupported unary operator: %s", e.Op)
 		}

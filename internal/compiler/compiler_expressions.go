@@ -84,6 +84,12 @@ func (c *Compiler) compileExpression(buf *bytes.Buffer, expr ast.Expr) error {
 			return nil
 		case token.ADD:
 			return c.compileExpression(buf, e.X)
+		case token.NOT:
+			if err := c.compileExpression(buf, e.X); err != nil {
+				return err
+			}
+			buf.WriteByte(OpI32Eqz)
+			return nil
 		default:
 			return fmt.Errorf("unsupported unary operator: %s", e.Op)
 		}
