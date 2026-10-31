@@ -22,11 +22,11 @@ I plan to have some [docs](https://ewaldhorn.github.io/wogo/) that I will try to
 
 ## Dev Environment
 
-I use Go (1.27.3) for development with WasmTime (wasmtime 50.0.0) for testing and Wat2Wasm (1.0.42) as a reference compiler to sanity check my output.
+I use Go for development with WasmTime for testing and Wat2Wasm as a reference compiler to sanity check my output.
 
-- [Go](https://go.dev/)
-- [WasmTime](https://wasmtime.dev/)
-- [Wat2Wasm](https://github.com/webassembly/wabt)
+- [Go](https://go.dev/) (v1.27.3)
+- [WasmTime](https://wasmtime.dev/) (50.0.1)
+- [Wat2Wasm](https://github.com/webassembly/wabt) (1.0.42)
 
 ## Acknowledgements & Attribution
 
