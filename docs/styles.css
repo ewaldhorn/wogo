@@ -1,0 +1,43 @@
+:root {
+    color-scheme: light;
+    --bg: #ffffff;
+    --fg: #111111;
+    --border: #dddddd;
+    --accent: #0066cc;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+        --bg: #111111;
+        --fg: #eeeeee;
+        --border: #333333;
+        --accent: #66b3ff;
+    }
+
+    /* user forced light */
+    :root:has(#theme-toggle:checked) {
+        color-scheme: light;
+        --bg: #ffffff;
+        --fg: #111111;
+        --border: #dddddd;
+        --accent: #0066cc;
+    }
+}
+
+body {
+    max-width: 900px;
+    margin: auto;
+    background: var(--bg);
+    color: var(--fg);
+    border-style: solid;
+    border-width: 0 1px;
+    border-color: var(--border);
+    padding: 0 10px;
+}
+
+/* get rid of the bullet thingies in the FAQ list */
+.faq {
+    list-style: none;
+    padding-left: 0;
+}
