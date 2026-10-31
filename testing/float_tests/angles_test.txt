@@ -1,0 +1,33 @@
+input: testdata/functions/angles.go
+output: tmp/angles.wat
+
+command: DegreesToRads
+signature: f64 -> f64
+arguments: 180.0
+expected: 3.141592653589793
+
+command: DegreesToRads
+signature: f64 -> f64
+arguments: 0.0
+expected: 0.0
+
+command: DegreesToRads
+signature: f64 -> f64
+arguments: 90.0
+expected: 1.5707963267948966
+
+command: RadsToDegrees
+signature: f64 -> f64
+arguments: 3.141592653589793
+expected: 180.0
+
+command: RadsToDegrees
+signature: f64 -> f64
+arguments: 0.0
+expected: 0.0
+
+command: RadsToDegrees
+signature: f64 -> f64
+arguments: 1.5707963267948966
+expected: 90.0
+
