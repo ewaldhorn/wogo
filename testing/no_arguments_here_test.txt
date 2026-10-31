@@ -16,3 +16,23 @@ expected: false
 command: IsNotFalse
 signature: -> bool
 expected: true
+
+command: IsActuallyFalse
+signature: -> bool
+expected: false
+
+command: IsActuallyTrue
+signature: -> bool
+expected: true
+
+command: FiveNots
+signature: -> bool
+expected: false
+
+command: SixNots
+signature: -> bool
+expected: true
+
+command: FifteenNots
+signature: -> bool
+expected: false
