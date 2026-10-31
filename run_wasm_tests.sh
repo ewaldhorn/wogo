@@ -7,5 +7,5 @@ set -e
 if [ $# -gt 0 ]; then
     go run ./cmd/testing -wasm "$@"
 else
-    go run ./cmd/testing -wasm testing/*
+    go run ./cmd/testing -wasm testing
 fi
