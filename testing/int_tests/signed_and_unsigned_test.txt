@@ -1,0 +1,78 @@
+input: testdata/functions/signed_and_unsigned.go
+output: tmp/signed_and_unsigned.wat
+
+command: DivSigned32
+signature: i32 i32 -> i32
+arguments: 10 -2
+expected: -5
+
+command: DivSigned32
+signature: i32 i32 -> i32
+arguments: -10 2
+expected: -5
+
+command: RemSigned32
+signature: i32 i32 -> i32
+arguments: -10 3
+expected: -1
+
+command: RemSigned32
+signature: i32 i32 -> i32
+arguments: 10 3
+expected: 1
+
+command: DivUnsigned32
+signature: i32 i32 -> i32
+arguments: 20 4
+expected: 5
+
+command: DivUnsigned32
+signature: i32 i32 -> i32
+arguments: 10 3
+expected: 3
+
+command: RemUnsigned32
+signature: i32 i32 -> i32
+arguments: 10 3
+expected: 1
+
+command: RemUnsigned32
+signature: i32 i32 -> i32
+arguments: 20 4
+expected: 0
+
+command: AddSigned64
+signature: i64 i64 -> i64
+arguments: 5000000000 2000000000
+expected: 7000000000
+
+command: SubSigned64
+signature: i64 i64 -> i64
+arguments: 7000000000 2000000000
+expected: 5000000000
+
+command: MulSigned64
+signature: i64 i64 -> i64
+arguments: 3000000 3000000
+expected: 9000000000000
+
+command: DivSigned64
+signature: i64 i64 -> i64
+arguments: -9000000000 3
+expected: -3000000000
+
+command: RemSigned64
+signature: i64 i64 -> i64
+arguments: -9000000005 3
+expected: -2
+
+command: DivUnsigned64
+signature: i64 i64 -> i64
+arguments: 9000000000 3
+expected: 3000000000
+
+command: RemUnsigned64
+signature: i64 i64 -> i64
+arguments: 9000000005 3
+expected: 2
+
