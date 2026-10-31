@@ -111,6 +111,16 @@ func (p *Parser) parseStatement(stmt ast.Stmt) error {
 func (p *Parser) parseExpression(expr ast.Expr) error {
 	switch e := expr.(type) {
 	case *ast.Ident:
+		if e.Name == "true" {
+			p.emit("i32.const 1") // wasm uses 1 for true
+			return nil
+		}
+
+		if e.Name == "false" {
+			p.emit("i32.const 0") // wasm uses 0 for false
+			return nil
+		}
+
 		wasmName, ok := p.locals[e.Name]
 		if !ok {
 			return fmt.Errorf("unknown identifier: %s", e.Name)

@@ -13,6 +13,18 @@ import (
 func (c *Compiler) compileExpression(buf *bytes.Buffer, expr ast.Expr) error {
 	switch e := expr.(type) {
 	case *ast.Ident:
+		if e.Name == "true" {
+			buf.WriteByte(OpI32Const)
+			putVarint(buf, 1) // wasm treats bool true as 1
+			return nil
+		}
+
+		if e.Name == "false" {
+			buf.WriteByte(OpI32Const)
+			putVarint(buf, 0) // wasm treats bool false as 0
+			return nil
+		}
+
 		idx, ok := c.locals[e.Name]
 		if !ok {
 			return fmt.Errorf("unknown identifier: %s", e.Name)
