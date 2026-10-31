@@ -33,6 +33,7 @@ command: SixNots
 signature: -> bool
 expected: true
 
+# Just to be silly, really.
 command: FifteenNots
 signature: -> bool
 expected: false
