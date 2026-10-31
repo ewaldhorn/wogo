@@ -19,3 +19,7 @@ func Square(a int32) int32 {
 func Cube(a int32) int32 {
 	return a * a * a
 }
+
+func IsFalse() bool {
+	return false
+}

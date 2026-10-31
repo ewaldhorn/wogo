@@ -56,3 +56,7 @@ signature: i32 -> i32
 arguments: -3
 expected: -27
 
+command: IsFalse
+signature -> bool
+arguments:
+expected: false

@@ -1,5 +1,6 @@
 package constants
 
+// version is arbitrary and is just something I keep around for myself. results may vary
 const WOGO_VERSION = "0.0.1"
 
 // ------------------------------------------------------------------------------------- EXIT CODES
