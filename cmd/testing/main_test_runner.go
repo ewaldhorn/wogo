@@ -253,6 +253,9 @@ func isClose(a, b, absTol, relTol float64) bool {
 	if a == b {
 		return true
 	}
+	if math.IsNaN(a) || math.IsNaN(b) || math.IsInf(a, 0) || math.IsInf(b, 0) {
+		return false
+	}
 	diff := math.Abs(a - b)
 	return diff <= math.Max(absTol, relTol*math.Max(math.Abs(a), math.Abs(b)))
 }
