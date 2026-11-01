@@ -11,13 +11,16 @@ import (
 // ------------------------------------------------------------------------------------------------
 // Compiler translates Go source code into WebAssembly binary bytecode (.wasm).
 type Compiler struct {
-	locals map[string]uint32
+	locals     map[string]uint32
+	localTypes map[string]string
+	returnType string
 }
 
 // ------------------------------------------------------------------------------------------------
 func NewCompiler() *Compiler {
 	return &Compiler{
-		locals: make(map[string]uint32),
+		locals:     make(map[string]uint32),
+		localTypes: make(map[string]string),
 	}
 }
 
@@ -57,6 +60,8 @@ func (c *Compiler) Compile(src string) ([]byte, error) {
 }
 
 // ------------------------------------------------------------------------------------------------
+// assembleModule puts together a wasm module with the header and all the sections
+// TODO: Import section still baffles me.
 func (c *Compiler) assembleModule(signatures []funcSignature, functions []compiledFunction) ([]byte, error) {
 	var module bytes.Buffer
 

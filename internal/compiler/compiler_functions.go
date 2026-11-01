@@ -24,13 +24,17 @@ type compiledFunction struct {
 // Attempts to compile a function, by compiling the statements which in turn do the expressions.
 func (c *Compiler) compileFunc(fn *ast.FuncDecl) (funcSignature, []byte, error) {
 	c.locals = make(map[string]uint32)
+	c.localTypes = make(map[string]string)
+	c.returnType = "int32"
 
 	var sig funcSignature
 	if fn.Type.Params != nil {
 		for _, field := range fn.Type.Params.List {
+			goType := typeName(field.Type)
 			wasmType := toWasmValueType(field.Type)
 			for _, name := range field.Names {
 				c.locals[name.Name] = uint32(len(c.locals))
+				c.localTypes[name.Name] = goType
 				sig.params = append(sig.params, wasmType)
 			}
 		}
@@ -38,6 +42,7 @@ func (c *Compiler) compileFunc(fn *ast.FuncDecl) (funcSignature, []byte, error) 
 
 	if fn.Type.Results != nil {
 		for _, field := range fn.Type.Results.List {
+			c.returnType = typeName(field.Type)
 			sig.results = append(sig.results, toWasmValueType(field.Type))
 		}
 	}
@@ -58,4 +63,13 @@ func (c *Compiler) compileFunc(fn *ast.FuncDecl) (funcSignature, []byte, error) 
 	body.Write(code.Bytes())
 
 	return sig, body.Bytes(), nil
+}
+
+// ------------------------------------------------------------------------------------------------
+// typeName figures out the type name for an expression, as a string
+func typeName(expr ast.Expr) string {
+	if ident, ok := expr.(*ast.Ident); ok {
+		return ident.Name
+	}
+	return "int32"
 }
