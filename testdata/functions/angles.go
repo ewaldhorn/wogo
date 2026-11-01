@@ -7,4 +7,3 @@ func DegreesToRads(deg float64) float64 {
 func RadsToDegrees(rad float64) float64 {
 	return rad * (180.0 / 3.141592653589793)
 }
-
