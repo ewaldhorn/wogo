@@ -33,7 +33,7 @@ func Test_putUvarint(t *testing.T) {
 // ------------------------------------------------------------------------------------------------
 func Test_putVarint(t *testing.T) {
 	tests := []struct {
-		val  int32
+		val  int64
 		want []byte
 	}{
 		{0, []byte{0x00}},
