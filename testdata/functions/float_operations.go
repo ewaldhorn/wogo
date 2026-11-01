@@ -39,4 +39,3 @@ func DivFloat64(a float64, b float64) float64 {
 func NegFloat64(a float64) float64 {
 	return -a
 }
-

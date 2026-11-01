@@ -43,4 +43,3 @@ func DivUnsigned64(a uint64, b uint64) uint64 {
 func RemUnsigned64(a uint64, b uint64) uint64 {
 	return a % b
 }
-
