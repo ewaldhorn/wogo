@@ -6,9 +6,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"wogo/internal/compiler"
 	"wogo/internal/parser"
@@ -225,11 +227,13 @@ func verifyResults(actual, expected []string) error {
 	return nil
 }
 
+// ------------------------------------------------------------------------------------------------
 func matchesResult(actual, expected string) bool {
 	if actual == expected {
 		return true
 	}
 
+	// bool
 	// WebAssembly represents booleans as i32 (0 for false, 1 for true)
 	if (actual == "0" && expected == "false") || (actual == "false" && expected == "0") {
 		return true
@@ -238,7 +242,59 @@ func matchesResult(actual, expected string) bool {
 		return true
 	}
 
-	return false
+	// 32 and 64 bit numbers, int and float
+	return equalNumbers(actual, expected)
+}
+
+// ------------------------------------------------------------------------------------------------
+// isClose tests whether a and b are equal within an absolute or relative tolerance.
+// It returns true for a == b and false if either is NaN.
+func isClose(a, b, absTol, relTol float64) bool {
+	if a == b {
+		return true
+	}
+	diff := math.Abs(a - b)
+	return diff <= math.Max(absTol, relTol*math.Max(math.Abs(a), math.Abs(b)))
+}
+
+// ------------------------------------------------------------------------------------------------
+// comparing numbers is actually pretty trick it turns out, float32 and float64 especially
+// TODO: This probably needs a revisit, I'm not confident it covers everything.
+func equalNumbers(actualStr, expectedStr string) bool {
+	actualStr, expectedStr = strings.TrimSpace(actualStr), strings.TrimSpace(expectedStr)
+
+	// first check if it's floats, then we do a near-enough comparison
+	// or
+	if actual, err := strconv.ParseFloat(actualStr, 64); err == nil {
+		if expected, err := strconv.ParseFloat(expectedStr, 64); err == nil {
+			// 1 10k th, 1 100k th
+			if isClose(actual, expected, (1.0 / 10000.0), (1.0 / 100000.0)) {
+				return true
+			}
+			if math.IsNaN(actual) && math.IsNaN(expected) {
+				return true
+			}
+		}
+	}
+
+	// looks like we're working with ints, this is easier
+	actual, err := strconv.ParseInt(actualStr, 10, 64)
+	if err != nil {
+		return false
+	}
+	expected, err := strconv.ParseUint(expectedStr, 10, 64)
+	if err != nil {
+		return false
+	}
+
+	// make sure we're in a valid range for int32
+	if expected <= math.MaxUint32 && actual >= math.MinInt32 && actual <= math.MaxInt32 &&
+		uint32(int32(actual)) == uint32(expected) {
+		return true
+	}
+
+	// guess it's uint64
+	return actual >= 0 && uint64(actual) == expected
 }
 
 // ------------------------------------------------------------------------------------------------
