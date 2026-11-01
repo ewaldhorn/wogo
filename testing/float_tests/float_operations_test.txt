@@ -1,0 +1,53 @@
+input: testdata/functions/float_operations.go
+output: tmp/float_operations.wat
+
+command: AddFloat32
+signature: f32 f32 -> f32
+arguments: 1.5 2.5
+expected: 4.0
+
+command: SubFloat32
+signature: f32 f32 -> f32
+arguments: 5.5 2.25
+expected: 3.25
+
+command: MulFloat32
+signature: f32 f32 -> f32
+arguments: 2.5 4.0
+expected: 10.0
+
+command: DivFloat32
+signature: f32 f32 -> f32
+arguments: 7.5 2.5
+expected: 3.0
+
+command: NegFloat32
+signature: f32 -> f32
+arguments: 4.5
+expected: -4.5
+
+command: AddFloat64
+signature: f64 f64 -> f64
+arguments: 1.25 2.75
+expected: 4.0
+
+command: SubFloat64
+signature: f64 f64 -> f64
+arguments: 10.5 4.25
+expected: 6.25
+
+command: MulFloat64
+signature: f64 f64 -> f64
+arguments: 3.5 2.0
+expected: 7.0
+
+command: DivFloat64
+signature: f64 f64 -> f64
+arguments: 9.0 2.0
+expected: 4.5
+
+command: NegFloat64
+signature: f64 -> f64
+arguments: 12.34
+expected: -12.34
+
