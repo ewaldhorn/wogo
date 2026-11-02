@@ -26,7 +26,12 @@ func main() {
 	fmt.Println()
 
 	p := &parser.Parser{}
-	writeTargetFile(targetFile, p.Parse(src))
+	wat, err := p.Parse(src)
+	if err != nil {
+		fmt.Printf("Error parsing input: %v\n", err)
+		exitUnableToWritingOutputFile()
+	}
+	writeTargetFile(targetFile, wat)
 
 	// now that we have parsed the WAT without error, we can compile it to WASM
 	if wasmFile != "" {

@@ -342,20 +342,17 @@ func ensureOutput(spec *Spec) error {
 
 // ------------------------------------------------------------------------------------------------
 // compileGoToWat compiles a Go input source file to a WAT output file using wogo's internal parser.
-func compileGoToWat(input, output string) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("parser panic: %v", r)
-		}
-	}()
-
+func compileGoToWat(input, output string) error {
 	content, err := os.ReadFile(input)
 	if err != nil {
 		return fmt.Errorf("read input %q: %w", input, err)
 	}
 
 	p := &parser.Parser{}
-	wat := p.Parse(string(content))
+	wat, err := p.Parse(string(content))
+	if err != nil {
+		return fmt.Errorf("parse %q: %w", input, err)
+	}
 
 	if dir := filepath.Dir(output); dir != "" && dir != "." {
 		if err := os.MkdirAll(dir, 0755); err != nil {

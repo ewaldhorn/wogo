@@ -15,10 +15,10 @@ type Parser struct {
 // ------------------------------------------------------------------------------------------------
 // Parse translates Go source code into WebAssembly text format (WAT).
 // TODO: Spacing is a bit brittle I think
-func (p *Parser) Parse(src string) string {
+func (p *Parser) Parse(src string) (string, error) {
 	mod, err := ir.BuildModule(src)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	p.buf.Reset()
@@ -54,7 +54,7 @@ func (p *Parser) Parse(src string) string {
 	}
 
 	p.emit(")")
-	return p.buf.String()
+	return p.buf.String(), nil
 }
 
 // ------------------------------------------------------------------------------------------------
