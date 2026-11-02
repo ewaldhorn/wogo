@@ -1,0 +1,22 @@
+input: testdata/functions/go_int.go
+output: tmp/go_int.wat
+
+command: Add
+signature: i32 i32 -> i32
+arguments: 10 15
+expected: 25
+
+command: Add
+signature: i32 i32 -> i32
+arguments: -3 7
+expected: 4
+
+command: Sub
+signature: i32 i32 -> i32
+arguments: 10 15
+expected: -5
+
+command: AddU
+signature: i32 i32 -> i32
+arguments: 20 22
+expected: 42
