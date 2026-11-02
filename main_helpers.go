@@ -47,26 +47,51 @@ func printUsage() {
 
 // ------------------------------------------------------------------------------------------------
 func flagIs(expected string) bool {
-	return flag.NArg() > 00 && strings.EqualFold(flag.Arg(0), expected)
+	return flag.NArg() > 0 && strings.EqualFold(flag.Arg(0), expected)
 }
 
 // ------------------------------------------------------------------------------------------------
 func validateEnoughArguments() {
-	if len(os.Args) < 3 {
-		fmt.Println("Usage: wogo input_src output_file [output_wasm_file]")
-		fmt.Println("Example: wogo mycoolfile.go bundle.wat")
-		fmt.Println("Example: wogo mycoolfile.go bundle.wat bundle.wasm")
+	if flag.NArg() < 2 {
+		printPositionalUsage()
 		exitNotEnoughArguments()
 	}
 }
 
 // ------------------------------------------------------------------------------------------------
+func printPositionalUsage() {
+	fmt.Println("Usage: wogo input_src output_file [output_wasm_file]")
+	fmt.Println("Example: wogo mycoolfile.go bundle.wat")
+	fmt.Println("Example: wogo mycoolfile.go bundle.wat bundle.wasm")
+}
+
+// ------------------------------------------------------------------------------------------------
 // Assume the correct number of arguments mean we have what we need
 func getArguments() (string, string, string) {
-	if len(os.Args) > 3 {
-		return os.Args[1], os.Args[2], os.Args[3]
+	input, target, wasm, err := splitArguments(flag.Args())
+	if err != nil {
+		fmt.Println(err)
+		printPositionalUsage()
+		exitNotEnoughArguments()
 	}
-	return os.Args[1], os.Args[2], ""
+
+	return input, target, wasm
+}
+
+// ------------------------------------------------------------------------------------------------
+// splitArguments maps positional arguments to the input, target, and optional wasm file slots.
+// Flags must come before positionals: the flag package stops parsing at the first positional, so a
+// flag placed after positionals is rejected with a usage message.
+func splitArguments(args []string) (string, string, string, error) {
+	for _, a := range args {
+		if len(a) > 1 && strings.HasPrefix(a, "-") {
+			return "", "", "", fmt.Errorf("unexpected flag %q after positional arguments (flags must come first)", a)
+		}
+	}
+	if len(args) > 2 {
+		return args[0], args[1], args[2], nil
+	}
+	return args[0], args[1], "", nil
 }
 
 // ------------------------------------------------------------------------------------------------
