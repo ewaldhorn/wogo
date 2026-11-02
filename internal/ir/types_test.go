@@ -1,6 +1,7 @@
 package ir
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 )
@@ -60,6 +61,8 @@ func TestInstruction_WatString(t *testing.T) {
 	}{
 		{"local.get named", Instruction{Op: OpLocalGet, LocalIdx: 0, LocalName: "a"}, "local.get $a"},
 		{"local.get unnamed", Instruction{Op: OpLocalGet, LocalIdx: 2}, "local.get 2"},
+		{"local.set named", Instruction{Op: OpLocalSet, LocalIdx: 1, LocalName: "x"}, "local.set $x"},
+		{"local.set unnamed", Instruction{Op: OpLocalSet, LocalIdx: 3}, "local.set 3"},
 		{"i32.const raw", Instruction{Op: OpI32Const, I32: 42, Raw: "42"}, "i32.const 42"},
 		{"i32.const no raw", Instruction{Op: OpI32Const, I32: -3}, "i32.const -3"},
 		{"i64.const raw", Instruction{Op: OpI64Const, I64: 9, Raw: "9"}, "i64.const 9"},
@@ -98,6 +101,7 @@ func TestInstruction_WatString(t *testing.T) {
 		{"f64.mul", Instruction{Op: OpF64Mul}, "f64.mul"},
 		{"f64.div", Instruction{Op: OpF64Div}, "f64.div"},
 		{"return", Instruction{Op: OpReturn}, "return"},
+		{"drop", Instruction{Op: OpDrop}, "drop"},
 		{"unrendered op is empty", Instruction{Op: OpEnd}, ""},
 	}
 
@@ -107,5 +111,25 @@ func TestInstruction_WatString(t *testing.T) {
 				t.Errorf("WatString() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+func TestEncodeInstruction_LocalSet(t *testing.T) {
+	var code bytes.Buffer
+	EncodeInstruction(&code, Instruction{Op: OpLocalSet, LocalIdx: 3})
+	want := []byte{byte(OpLocalSet), 3}
+	if !bytes.Equal(code.Bytes(), want) {
+		t.Errorf("EncodeInstruction(OpLocalSet) = %v, want %v", code.Bytes(), want)
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+func TestEncodeInstruction_Drop(t *testing.T) {
+	var code bytes.Buffer
+	EncodeInstruction(&code, Instruction{Op: OpDrop})
+	want := []byte{byte(OpDrop)}
+	if !bytes.Equal(code.Bytes(), want) {
+		t.Errorf("EncodeInstruction(OpDrop) = %v, want %v", code.Bytes(), want)
 	}
 }

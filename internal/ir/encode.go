@@ -61,7 +61,7 @@ func PutFloat64(buf *bytes.Buffer, val float64) {
 func EncodeInstruction(buf *bytes.Buffer, inst Instruction) {
 	buf.WriteByte(byte(inst.Op))
 	switch inst.Op {
-	case OpLocalGet:
+	case OpLocalGet, OpLocalSet:
 		PutUvarint(buf, inst.LocalIdx)
 	case OpI32Const:
 		PutVarint(buf, int64(inst.I32))

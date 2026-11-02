@@ -11,6 +11,7 @@ const (
 	OpReturn   OpCode = 0x0F
 	OpDrop     OpCode = 0x1A
 	OpLocalGet OpCode = 0x20
+	OpLocalSet OpCode = 0x21
 
 	// Constants
 	OpI32Const OpCode = 0x41
