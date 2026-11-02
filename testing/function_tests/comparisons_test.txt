@@ -1,0 +1,164 @@
+# Tests for comparison operators
+
+input: testdata/functions/comparisons.go
+output: tmp/comparisons.wat
+
+command: EqualI32
+signature: i32 i32 -> bool
+arguments: 42 42
+expected: true
+
+command: EqualI32
+signature: i32 i32 -> bool
+arguments: 42 10
+expected: false
+
+command: NotEqualI32
+signature: i32 i32 -> bool
+arguments: 42 10
+expected: true
+
+command: NotEqualI32
+signature: i32 i32 -> bool
+arguments: 42 42
+expected: false
+
+command: LessThanI32
+signature: i32 i32 -> bool
+arguments: -5 10
+expected: true
+
+command: LessThanI32
+signature: i32 i32 -> bool
+arguments: 10 -5
+expected: false
+
+command: LessOrEqualI32
+signature: i32 i32 -> bool
+arguments: 10 10
+expected: true
+
+command: GreaterThanI32
+signature: i32 i32 -> bool
+arguments: 15 10
+expected: true
+
+command: GreaterOrEqualI32
+signature: i32 i32 -> bool
+arguments: 10 10
+expected: true
+
+command: LessThanU32
+signature: i32 i32 -> bool
+arguments: 5 10
+expected: true
+
+command: LessThanU32
+signature: i32 i32 -> bool
+arguments: -1 10
+expected: false
+
+command: GreaterThanU32
+signature: i32 i32 -> bool
+arguments: -1 10
+expected: true
+
+command: EqualI64
+signature: i64 i64 -> bool
+arguments: 9000000000 9000000000
+expected: true
+
+command: LessThanI64
+signature: i64 i64 -> bool
+arguments: -9000000000 9000000000
+expected: true
+
+command: GreaterThanU64
+signature: i64 i64 -> bool
+arguments: -1 10
+expected: true
+
+command: LessThanF64
+signature: f64 f64 -> bool
+arguments: 1.5 2.5
+expected: true
+
+command: GreaterOrEqualF32
+signature: f32 f32 -> bool
+arguments: 3.5 3.5
+expected: true
+
+command: EqualBool
+signature: i32 i32 -> bool
+arguments: 1 1
+expected: true
+
+command: EqualBool
+signature: i32 i32 -> bool
+arguments: 1 0
+expected: false
+
+command: NotEqualBool
+signature: i32 i32 -> bool
+arguments: 1 0
+expected: true
+
+command: IsPositive
+signature: i32 -> bool
+arguments: 5
+expected: true
+
+command: IsPositive
+signature: i32 -> bool
+arguments: -5
+expected: false
+
+command: IsPositive
+signature: i32 -> bool
+arguments: 0
+expected: false
+
+command: LessOrEqualI32
+signature: i32 i32 -> bool
+arguments: 11 10
+expected: false
+
+command: GreaterThanI32
+signature: i32 i32 -> bool
+arguments: 10 15
+expected: false
+
+command: GreaterOrEqualI32
+signature: i32 i32 -> bool
+arguments: 9 10
+expected: false
+
+command: LessThanF64
+signature: f64 f64 -> bool
+arguments: 2.5 1.5
+expected: false
+
+command: GreaterOrEqualF32
+signature: f32 f32 -> bool
+arguments: 2.5 3.5
+expected: false
+
+command: NotEqualBool
+signature: i32 i32 -> bool
+arguments: 1 1
+expected: false
+
+command: InRange
+signature: i32 i32 i32 -> bool
+arguments: 5 1 10
+expected: true
+
+command: InRange
+signature: i32 i32 i32 -> bool
+arguments: 0 1 10
+expected: false
+
+command: InRange
+signature: i32 i32 i32 -> bool
+arguments: 11 1 10
+expected: false
