@@ -19,9 +19,47 @@ const (
 	OpF32Const OpCode = 0x43
 	OpF64Const OpCode = 0x44
 
-	// Comparisons
+	// Comparisons - i32
 	OpI32Eqz OpCode = 0x45
+	OpI32Eq  OpCode = 0x46
+	OpI32Ne  OpCode = 0x47
+	OpI32LtS OpCode = 0x48
+	OpI32LtU OpCode = 0x49
+	OpI32GtS OpCode = 0x4A
+	OpI32GtU OpCode = 0x4B
+	OpI32LeS OpCode = 0x4C
+	OpI32LeU OpCode = 0x4D
+	OpI32GeS OpCode = 0x4E
+	OpI32GeU OpCode = 0x4F
+
+	// Comparisons - i64
 	OpI64Eqz OpCode = 0x50
+	OpI64Eq  OpCode = 0x51
+	OpI64Ne  OpCode = 0x52
+	OpI64LtS OpCode = 0x53
+	OpI64LtU OpCode = 0x54
+	OpI64GtS OpCode = 0x55
+	OpI64GtU OpCode = 0x56
+	OpI64LeS OpCode = 0x57
+	OpI64LeU OpCode = 0x58
+	OpI64GeS OpCode = 0x59
+	OpI64GeU OpCode = 0x5A
+
+	// Comparisons - f32
+	OpF32Eq OpCode = 0x5B
+	OpF32Ne OpCode = 0x5C
+	OpF32Lt OpCode = 0x5D
+	OpF32Gt OpCode = 0x5E
+	OpF32Le OpCode = 0x5F
+	OpF32Ge OpCode = 0x60
+
+	// Comparisons - f64
+	OpF64Eq OpCode = 0x61
+	OpF64Ne OpCode = 0x62
+	OpF64Lt OpCode = 0x63
+	OpF64Gt OpCode = 0x64
+	OpF64Le OpCode = 0x65
+	OpF64Ge OpCode = 0x66
 
 	// i32 operations
 	OpI32Add  OpCode = 0x6A
