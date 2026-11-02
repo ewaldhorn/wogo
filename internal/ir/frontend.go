@@ -541,7 +541,37 @@ func (b *builder) compileBasicLit(e *ast.BasicLit, exprType string) error {
 }
 
 // ------------------------------------------------------------------------------------------------
+// isComparison reports whether an operator is a comparison operator.
+func isComparison(op token.Token) bool {
+	switch op {
+	case token.EQL, token.NEQ, token.LSS, token.LEQ, token.GTR, token.GEQ:
+		return true
+	default:
+		return false
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
 func (b *builder) compileBinaryExpr(e *ast.BinaryExpr, exprType string) error {
+	if isComparison(e.Op) {
+		operandType, err := b.resolveComparisonOperandType(e)
+		if err != nil {
+			return err
+		}
+		if err := b.compileExpr(e.X, operandType); err != nil {
+			return err
+		}
+		if err := b.compileExpr(e.Y, operandType); err != nil {
+			return err
+		}
+		opCode, err := binaryOpCode(e.Op, operandType)
+		if err != nil {
+			return err
+		}
+		b.instructions = append(b.instructions, Instruction{Op: opCode})
+		return nil
+	}
+
 	if err := b.compileExpr(e.X, exprType); err != nil {
 		return err
 	}
@@ -564,11 +594,7 @@ func (b *builder) compileUnaryExpr(e *ast.UnaryExpr, exprType string) error {
 		if err := b.compileExpr(e.X, "bool"); err != nil {
 			return err
 		}
-		if exprType == "int64" || exprType == "uint64" {
-			b.instructions = append(b.instructions, Instruction{Op: OpI64Eqz})
-		} else {
-			b.instructions = append(b.instructions, Instruction{Op: OpI32Eqz})
-		}
+		b.instructions = append(b.instructions, Instruction{Op: OpI32Eqz})
 		return nil
 
 	case token.SUB:
@@ -667,6 +693,9 @@ func (b *builder) resolveExprType(expr ast.Expr, targetType string) string {
 		return targetType
 
 	case *ast.BinaryExpr:
+		if isComparison(e.Op) {
+			return "bool"
+		}
 		tX := b.resolveExprType(e.X, targetType)
 		if tX != "int32" && tX != "" {
 			return tX
@@ -701,6 +730,72 @@ func (b *builder) resolveExprType(expr ast.Expr, targetType string) string {
 	default:
 		return targetType
 	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// resolveComparisonOperandType determines the common operand type for a comparison.
+func (b *builder) resolveComparisonOperandType(e *ast.BinaryExpr) (string, error) {
+	cX := b.concreteExprType(e.X)
+	cY := b.concreteExprType(e.Y)
+	if cX != "" && cY != "" && cX != cY {
+		return "", fmt.Errorf("invalid operation: %s (mismatched types %s and %s)", e.Op, cX, cY)
+	}
+
+	target := cX
+	if target == "" {
+		target = cY
+	}
+
+	tX := b.resolveExprType(e.X, target)
+	tY := b.resolveExprType(e.Y, target)
+
+	if tX != "" && tY != "" && tX != tY {
+		return "", fmt.Errorf("invalid operation: %s (mismatched types %s and %s)", e.Op, tX, tY)
+	}
+
+	if tX != "" && tX != "int32" {
+		return tX, nil
+	}
+	if tY != "" && tY != "int32" {
+		return tY, nil
+	}
+	if tX != "" {
+		return tX, nil
+	}
+	if tY != "" {
+		return tY, nil
+	}
+	return "int32", nil
+}
+
+// ------------------------------------------------------------------------------------------------
+// concreteExprType returns the explicit or declared type of an expression if known,
+// or empty string if it is an untyped literal or unconstrained expression.
+func (b *builder) concreteExprType(expr ast.Expr) string {
+	switch e := expr.(type) {
+	case *ast.Ident:
+		if e.Name == "true" || e.Name == "false" {
+			return "bool"
+		}
+		if t, ok := b.localTypes[e.Name]; ok {
+			return t
+		}
+		if cDef, ok := b.lookupConstant(e.Name); ok && cDef.explicitType != "" {
+			return cDef.explicitType
+		}
+	case *ast.ParenExpr:
+		return b.concreteExprType(e.X)
+	case *ast.UnaryExpr:
+		if e.Op == token.NOT {
+			return "bool"
+		}
+		return b.concreteExprType(e.X)
+	case *ast.BinaryExpr:
+		if isComparison(e.Op) {
+			return "bool"
+		}
+	}
+	return ""
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -758,6 +853,13 @@ func typeName(expr ast.Expr) (string, error) {
 // ------------------------------------------------------------------------------------------------
 func binaryOpCode(op token.Token, exprType string) (OpCode, error) {
 	switch exprType {
+	case "bool":
+		switch op {
+		case token.EQL:
+			return OpI32Eq, nil
+		case token.NEQ:
+			return OpI32Ne, nil
+		}
 	case "int64":
 		switch op {
 		case token.ADD:
@@ -770,6 +872,18 @@ func binaryOpCode(op token.Token, exprType string) (OpCode, error) {
 			return OpI64DivS, nil
 		case token.REM:
 			return OpI64RemS, nil
+		case token.EQL:
+			return OpI64Eq, nil
+		case token.NEQ:
+			return OpI64Ne, nil
+		case token.LSS:
+			return OpI64LtS, nil
+		case token.LEQ:
+			return OpI64LeS, nil
+		case token.GTR:
+			return OpI64GtS, nil
+		case token.GEQ:
+			return OpI64GeS, nil
 		}
 	case "uint64":
 		switch op {
@@ -783,8 +897,20 @@ func binaryOpCode(op token.Token, exprType string) (OpCode, error) {
 			return OpI64DivU, nil
 		case token.REM:
 			return OpI64RemU, nil
+		case token.EQL:
+			return OpI64Eq, nil
+		case token.NEQ:
+			return OpI64Ne, nil
+		case token.LSS:
+			return OpI64LtU, nil
+		case token.LEQ:
+			return OpI64LeU, nil
+		case token.GTR:
+			return OpI64GtU, nil
+		case token.GEQ:
+			return OpI64GeU, nil
 		}
-	case "int32", "int", "bool":
+	case "int32", "int":
 		switch op {
 		case token.ADD:
 			return OpI32Add, nil
@@ -796,6 +922,18 @@ func binaryOpCode(op token.Token, exprType string) (OpCode, error) {
 			return OpI32DivS, nil
 		case token.REM:
 			return OpI32RemS, nil
+		case token.EQL:
+			return OpI32Eq, nil
+		case token.NEQ:
+			return OpI32Ne, nil
+		case token.LSS:
+			return OpI32LtS, nil
+		case token.LEQ:
+			return OpI32LeS, nil
+		case token.GTR:
+			return OpI32GtS, nil
+		case token.GEQ:
+			return OpI32GeS, nil
 		}
 	case "uint32", "uint":
 		switch op {
@@ -809,6 +947,18 @@ func binaryOpCode(op token.Token, exprType string) (OpCode, error) {
 			return OpI32DivU, nil
 		case token.REM:
 			return OpI32RemU, nil
+		case token.EQL:
+			return OpI32Eq, nil
+		case token.NEQ:
+			return OpI32Ne, nil
+		case token.LSS:
+			return OpI32LtU, nil
+		case token.LEQ:
+			return OpI32LeU, nil
+		case token.GTR:
+			return OpI32GtU, nil
+		case token.GEQ:
+			return OpI32GeU, nil
 		}
 	case "float32":
 		switch op {
@@ -820,6 +970,18 @@ func binaryOpCode(op token.Token, exprType string) (OpCode, error) {
 			return OpF32Mul, nil
 		case token.QUO:
 			return OpF32Div, nil
+		case token.EQL:
+			return OpF32Eq, nil
+		case token.NEQ:
+			return OpF32Ne, nil
+		case token.LSS:
+			return OpF32Lt, nil
+		case token.LEQ:
+			return OpF32Le, nil
+		case token.GTR:
+			return OpF32Gt, nil
+		case token.GEQ:
+			return OpF32Ge, nil
 		}
 	case "float64":
 		switch op {
@@ -831,6 +993,18 @@ func binaryOpCode(op token.Token, exprType string) (OpCode, error) {
 			return OpF64Mul, nil
 		case token.QUO:
 			return OpF64Div, nil
+		case token.EQL:
+			return OpF64Eq, nil
+		case token.NEQ:
+			return OpF64Ne, nil
+		case token.LSS:
+			return OpF64Lt, nil
+		case token.LEQ:
+			return OpF64Le, nil
+		case token.GTR:
+			return OpF64Gt, nil
+		case token.GEQ:
+			return OpF64Ge, nil
 		}
 	default:
 		return 0, fmt.Errorf("unsupported type %q for binary operator %s", exprType, op)
