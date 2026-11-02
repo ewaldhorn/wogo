@@ -33,3 +33,17 @@ command: RadsToDegrees
 signature: f64 -> f64
 arguments: 1.5707963267948966
 expected: 90.0
+
+command: Circumference
+signature: f64 -> f64
+arguments: 1.0
+expected: 6.283185307179586
+
+command: Circumference
+signature: f64 -> f64
+arguments: 0.0
+expected: 0.0
+
+command: ShadowPI
+signature: -> f64
+expected: 3.15
