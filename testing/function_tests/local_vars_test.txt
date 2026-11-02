@@ -1,0 +1,57 @@
+# Tests for mutable local variables and variable declarations
+
+input: testdata/functions/local_vars.go
+output: tmp/local_vars.wat
+
+command: ShortVar
+signature: i32 -> i32
+arguments: 5
+expected: 15
+
+command: Reassign
+signature: i32 -> i32
+arguments: 7
+expected: 14
+
+command: CompoundOps
+signature: i32 -> i32
+arguments: 4
+expected: 4
+
+command: VarZero
+signature: -> i32
+expected: 0
+
+command: VarInit
+signature: i32 -> i32
+arguments: 20
+expected: 25
+
+command: MultipleLocals
+signature: i32 i32 -> i32
+arguments: 3 4
+expected: 18
+
+command: FloatLocal
+signature: f64 -> f64
+arguments: 2.5
+expected: 8.0
+
+command: MutateParam
+signature: i32 -> i32
+arguments: 10
+expected: 15
+
+command: MixedShortVar
+signature: i32 -> i32
+arguments: 5
+expected: 16
+
+command: Swap
+signature: i32 i32 -> i32
+arguments: 3 7
+expected: 7
+
+command: DupAssign
+signature: -> i32
+expected: 2
