@@ -308,8 +308,8 @@ func TestBuildModule_Errors(t *testing.T) {
 			"unknown identifier: b",
 		},
 		{
-			"assign statement unsupported",
-			"package calc\n\nfunc F(a int32) int32 { x := 1; return a }\n",
+			"for statement unsupported",
+			"package calc\n\nfunc F(a int32) int32 { for {}; return a }\n",
 			"unsupported statement type",
 		},
 		{
@@ -318,8 +318,8 @@ func TestBuildModule_Errors(t *testing.T) {
 			"unsupported statement type",
 		},
 		{
-			"var declaration unsupported",
-			"package calc\n\nfunc F(a int32) int32 { var x int32; return a }\n",
+			"type declaration unsupported",
+			"package calc\n\nfunc F(a int32) int32 { type MyInt int32; return a }\n",
 			"unsupported declaration statement",
 		},
 		{
@@ -341,6 +341,76 @@ func TestBuildModule_Errors(t *testing.T) {
 			"imaginary literal unsupported",
 			"package calc\n\nfunc F() float64 { return 1i }\n",
 			"unsupported literal kind",
+		},
+		{
+			"redefine with := rejected",
+			"package calc\n\nfunc F() int32 { x := 1; x := 2; return x }\n",
+			"no new variables on left side of :=",
+		},
+		{
+			"repeated name in := rejected",
+			"package calc\n\nfunc F() int32 { x, x := 1, 2; return x }\n",
+			"repeated on left side of :=",
+		},
+		{
+			"self-referential := rejected",
+			"package calc\n\nfunc F() int32 { x := x + 1; return x }\n",
+			"unknown identifier: x",
+		},
+		{
+			"var redeclare rejected",
+			"package calc\n\nfunc F() int32 { var x int32; var x int32; return x }\n",
+			"x redeclared in this block",
+		},
+		{
+			"var shadowing param rejected",
+			"package calc\n\nfunc F(x int32) int32 { var x int32; return x }\n",
+			"x redeclared in this block",
+		},
+		{
+			"self-referential var rejected",
+			"package calc\n\nfunc F() int32 { var x int32 = x + 1; return x }\n",
+			"unknown identifier: x",
+		},
+		{
+			"assign to unknown identifier",
+			"package calc\n\nfunc F() int32 { y = 1; return 0 }\n",
+			"unknown identifier: y",
+		},
+		{
+			"short var count mismatch",
+			"package calc\n\nfunc F() int32 { x, y := 1; return x }\n",
+			"assignment mismatch",
+		},
+		{
+			"compound assign to unknown identifier",
+			"package calc\n\nfunc F() int32 { x += 1; return 0 }\n",
+			"unknown identifier: x",
+		},
+		{
+			"bitwise assign unsupported",
+			"package calc\n\nfunc F() int32 { x := 1; x &= 2; return x }\n",
+			"unsupported assignment operator",
+		},
+		{
+			"non-identifier assign target",
+			"package calc\n\nfunc F() int32 { 1 = 2; return 0 }\n",
+			"cannot assign to non-identifier",
+		},
+		{
+			"var too many values",
+			"package calc\n\nfunc F() int32 { var x int32 = 1, 2; return x }\n",
+			"assignment mismatch",
+		},
+		{
+			"var too few values",
+			"package calc\n\nfunc F() int32 { var x, y int32 = 1; return x }\n",
+			"assignment mismatch",
+		},
+		{
+			"cross-referential := rejected",
+			"package calc\n\nfunc F() int32 { x, y := 1, x; return y }\n",
+			"unknown identifier: x",
 		},
 	}
 
@@ -462,5 +532,148 @@ func TestResolveExprType(t *testing.T) {
 				t.Errorf("resolveExprType(%q, %q) = %q, want %q", tt.expr, tt.target, got, tt.want)
 			}
 		})
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+func TestBuildFunction_LocalVariables(t *testing.T) {
+	src := `package test
+
+func Calc(a int32) int32 {
+	x := 10
+	x = x + a
+	x += 5
+	var y int32 = 2
+	var z int32
+	return x + y + z
+}
+`
+	mod, err := BuildModule(src)
+	if err != nil {
+		t.Fatalf("BuildModule failed: %v", err)
+	}
+
+	if len(mod.Functions) != 1 {
+		t.Fatalf("expected 1 function, got %d", len(mod.Functions))
+	}
+
+	fn := mod.Functions[0]
+	if len(fn.Params) != 1 {
+		t.Fatalf("expected 1 param, got %d", len(fn.Params))
+	}
+	if len(fn.Locals) != 3 {
+		t.Fatalf("expected 3 locals, got %d: %+v", len(fn.Locals), fn.Locals)
+	}
+
+	if fn.Locals[0].Name != "x" || fn.Locals[0].Type != TypeI32 {
+		t.Errorf("unexpected local 0: %+v", fn.Locals[0])
+	}
+	if fn.Locals[1].Name != "y" || fn.Locals[1].Type != TypeI32 {
+		t.Errorf("unexpected local 1: %+v", fn.Locals[1])
+	}
+	if fn.Locals[2].Name != "z" || fn.Locals[2].Type != TypeI32 {
+		t.Errorf("unexpected local 2: %+v", fn.Locals[2])
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+func TestBuildFunction_LocalVariables_Lowering(t *testing.T) {
+	src := "package calc\n\nfunc F(a int32) int32 { x := a + 1; x += 2; return x }\n"
+	want := []string{
+		"local.get $a", "i32.const 1", "i32.add", "local.set $x",
+		"local.get $x", "i32.const 2", "i32.add", "local.set $x",
+		"local.get $x", "return",
+	}
+	got := watLines(t, src, 0)
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("locals lowering mismatch:\n got:\n%s\nwant:\n%s",
+			strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// Mixed := reuses the existing variable and declares only the new one,
+// matching Go (which requires at least one new variable on the left).
+func TestBuildFunction_ShortVarMixed(t *testing.T) {
+	src := "package calc\n\nfunc F(a int32) int32 { x := a; x, y := x + 1, 2; return x + y }\n"
+	mod, err := BuildModule(src)
+	if err != nil {
+		t.Fatalf("BuildModule failed: %v", err)
+	}
+
+	fn := mod.Functions[0]
+	if len(fn.Locals) != 2 {
+		t.Fatalf("expected 2 locals, got %d: %+v", len(fn.Locals), fn.Locals)
+	}
+	if fn.Locals[0].Name != "x" || fn.Locals[1].Name != "y" {
+		t.Errorf("unexpected locals: %+v", fn.Locals)
+	}
+
+	want := []string{
+		"local.get $a", "local.set $x",
+		"local.get $x", "i32.const 1", "i32.add", "i32.const 2", "local.set $y", "local.set $x",
+		"local.get $x", "local.get $y", "i32.add", "return",
+	}
+	var got []string
+	for _, inst := range fn.Instructions {
+		got = append(got, inst.WatString())
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("mixed := lowering mismatch:\n got:\n%s\nwant:\n%s",
+			strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// Multi-assign evaluates every value before storing any of them, so aliased
+// targets like a swap observe pre-assignment state.
+func TestBuildFunction_MultiAssignSwap(t *testing.T) {
+	src := "package calc\n\nfunc F(a int32, b int32) int32 { a, b = b, a; return a }\n"
+	want := []string{
+		"local.get $b", "local.get $a", "local.set $b", "local.set $a",
+		"local.get $a", "return",
+	}
+	got := watLines(t, src, 0)
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("swap lowering mismatch:\n got:\n%s\nwant:\n%s",
+			strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// A repeated = target keeps its last value, like Go's left-to-right
+// assignment; earlier duplicates only discard their value.
+func TestBuildFunction_MultiAssignDuplicateTarget(t *testing.T) {
+	src := "package calc\n\nfunc F() int32 { x := 0; x, x = 1, 2; return x }\n"
+	want := []string{
+		"i32.const 0", "local.set $x",
+		"i32.const 1", "i32.const 2", "local.set $x", "drop",
+		"local.get $x", "return",
+	}
+	got := watLines(t, src, 0)
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("duplicate target lowering mismatch:\n got:\n%s\nwant:\n%s",
+			strings.Join(got, "\n"), strings.Join(want, "\n"))
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// Without an explicit type, each var name takes the type of its own value.
+func TestBuildFunction_VarPerValueInference(t *testing.T) {
+	src := "package calc\n\nfunc F() float64 { var a, b = 1, 2.5; return b }\n"
+	mod, err := BuildModule(src)
+	if err != nil {
+		t.Fatalf("BuildModule failed: %v", err)
+	}
+
+	fn := mod.Functions[0]
+	if len(fn.Locals) != 2 {
+		t.Fatalf("expected 2 locals, got %d: %+v", len(fn.Locals), fn.Locals)
+	}
+	if fn.Locals[0].Name != "a" || fn.Locals[0].Type != TypeI32 {
+		t.Errorf("unexpected local 0: %+v", fn.Locals[0])
+	}
+	if fn.Locals[1].Name != "b" || fn.Locals[1].Type != TypeF64 {
+		t.Errorf("unexpected local 1: %+v", fn.Locals[1])
 	}
 }

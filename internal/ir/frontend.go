@@ -21,6 +21,7 @@ type builder struct {
 	localConstants   map[string]constantDef
 	locals           map[string]uint32
 	localTypes       map[string]string
+	localsList       []Local
 	returnType       string
 	instructions     []Instruction
 }
@@ -70,6 +71,7 @@ func (b *builder) buildFunction(fn *ast.FuncDecl) (*Function, error) {
 	b.locals = make(map[string]uint32)
 	b.localTypes = make(map[string]string)
 	b.localConstants = make(map[string]constantDef)
+	b.localsList = nil
 	b.returnType = "int32"
 	b.instructions = nil
 
@@ -136,6 +138,7 @@ func (b *builder) buildFunction(fn *ast.FuncDecl) (*Function, error) {
 		}
 	}
 
+	function.Locals = b.localsList
 	function.Instructions = b.instructions
 	return function, nil
 }
@@ -144,10 +147,19 @@ func (b *builder) buildFunction(fn *ast.FuncDecl) (*Function, error) {
 func (b *builder) buildStatement(stmt ast.Stmt) error {
 	switch s := stmt.(type) {
 	case *ast.DeclStmt:
-		if genDecl, ok := s.Decl.(*ast.GenDecl); ok && genDecl.Tok == token.CONST {
+		genDecl, ok := s.Decl.(*ast.GenDecl)
+		if !ok {
+			return fmt.Errorf("unsupported declaration statement: %T", s.Decl)
+		}
+		if genDecl.Tok == token.CONST {
 			return nil
 		}
+		if genDecl.Tok == token.VAR {
+			return b.buildVarDecl(genDecl)
+		}
 		return fmt.Errorf("unsupported declaration statement: %T", s.Decl)
+	case *ast.AssignStmt:
+		return b.buildAssignStmt(s)
 	case *ast.ReturnStmt:
 		for _, expr := range s.Results {
 			if err := b.compileExpr(expr, b.returnType); err != nil {
@@ -159,6 +171,249 @@ func (b *builder) buildStatement(stmt ast.Stmt) error {
 	default:
 		return fmt.Errorf("unsupported statement type: %T", stmt)
 	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// buildAssignStmt compiles assignment statements (:=, =, +=, -=, *=, /=, %=).
+func (b *builder) buildAssignStmt(s *ast.AssignStmt) error {
+	switch s.Tok {
+	case token.DEFINE: // :=
+		if len(s.Lhs) != len(s.Rhs) {
+			return fmt.Errorf("assignment mismatch: %d variables but %d values", len(s.Lhs), len(s.Rhs))
+		}
+		idents := make([]*ast.Ident, len(s.Lhs))
+		seen := make(map[string]bool, len(s.Lhs))
+		hasNew := false
+		for i, lhs := range s.Lhs {
+			ident, ok := lhs.(*ast.Ident)
+			if !ok {
+				return fmt.Errorf("cannot assign to non-identifier: %T", lhs)
+			}
+			if seen[ident.Name] {
+				return fmt.Errorf("%s repeated on left side of :=", ident.Name)
+			}
+			seen[ident.Name] = true
+			idents[i] = ident
+			if _, exists := b.locals[ident.Name]; !exists {
+				hasNew = true
+			}
+		}
+		if !hasNew {
+			return fmt.Errorf("no new variables on left side of :=")
+		}
+		// Phase 1: compile every value before any new name enters scope.
+		// A variable is not in scope in its own declaration (x := x + 1 fails).
+		type pendingDecl struct {
+			goType   string
+			wasmType Type
+			isNew    bool
+		}
+		pending := make([]pendingDecl, len(idents))
+		for i, ident := range idents {
+			if targetType, exists := b.localTypes[ident.Name]; exists {
+				// A sibling is new, so Go reuses this variable as a plain assignment.
+				pending[i] = pendingDecl{goType: targetType}
+			} else {
+				rhsType := b.resolveExprType(s.Rhs[i], "")
+				if rhsType == "" {
+					rhsType = "int32"
+				}
+				wasmType, err := ParseGoType(rhsType)
+				if err != nil {
+					return err
+				}
+				pending[i] = pendingDecl{goType: rhsType, wasmType: wasmType, isNew: true}
+			}
+			if err := b.compileExpr(s.Rhs[i], pending[i].goType); err != nil {
+				return err
+			}
+		}
+		// Phase 2: register the new names, then store in reverse order so
+		// each value pops into its own target (x, y := y, x swaps).
+		for i, ident := range idents {
+			if !pending[i].isNew {
+				continue
+			}
+			b.locals[ident.Name] = uint32(len(b.locals))
+			b.localTypes[ident.Name] = pending[i].goType
+			b.localsList = append(b.localsList, Local{
+				Name:   ident.Name,
+				GoType: pending[i].goType,
+				Type:   pending[i].wasmType,
+			})
+		}
+		for i := len(idents) - 1; i >= 0; i-- {
+			b.instructions = append(b.instructions, Instruction{
+				Op:        OpLocalSet,
+				LocalIdx:  b.locals[idents[i].Name],
+				LocalName: idents[i].Name,
+			})
+		}
+		return nil
+
+	case token.ASSIGN: // =
+		if len(s.Lhs) != len(s.Rhs) {
+			return fmt.Errorf("assignment mismatch: %d variables but %d values", len(s.Lhs), len(s.Rhs))
+		}
+		idents := make([]*ast.Ident, len(s.Lhs))
+		for i, lhs := range s.Lhs {
+			ident, ok := lhs.(*ast.Ident)
+			if !ok {
+				return fmt.Errorf("cannot assign to non-identifier: %T", lhs)
+			}
+			if _, exists := b.locals[ident.Name]; !exists {
+				return fmt.Errorf("unknown identifier: %s", ident.Name)
+			}
+			idents[i] = ident
+		}
+		// Compile every value first so right-hand sides all observe
+		// pre-assignment state, then store in reverse order so each value
+		// pops into its own target (a, b = b, a swaps).
+		for i, ident := range idents {
+			if err := b.compileExpr(s.Rhs[i], b.localTypes[ident.Name]); err != nil {
+				return err
+			}
+		}
+		// A repeated target keeps its last value, matching Go's left-to-right
+		// assignment; earlier duplicates only discard their value.
+		stored := make(map[string]bool, len(idents))
+		for i := len(idents) - 1; i >= 0; i-- {
+			if stored[idents[i].Name] {
+				b.instructions = append(b.instructions, Instruction{Op: OpDrop})
+				continue
+			}
+			stored[idents[i].Name] = true
+			b.instructions = append(b.instructions, Instruction{
+				Op:        OpLocalSet,
+				LocalIdx:  b.locals[idents[i].Name],
+				LocalName: idents[i].Name,
+			})
+		}
+		return nil
+
+	case token.ADD_ASSIGN, token.SUB_ASSIGN, token.MUL_ASSIGN, token.QUO_ASSIGN, token.REM_ASSIGN:
+		if len(s.Lhs) != 1 || len(s.Rhs) != 1 {
+			return fmt.Errorf("compound assignment supports single variable only")
+		}
+		ident, ok := s.Lhs[0].(*ast.Ident)
+		if !ok {
+			return fmt.Errorf("cannot assign to non-identifier: %T", s.Lhs[0])
+		}
+		idx, ok := b.locals[ident.Name]
+		if !ok {
+			return fmt.Errorf("unknown identifier: %s", ident.Name)
+		}
+		targetType := b.localTypes[ident.Name]
+
+		// Emit: local.get $ident
+		b.instructions = append(b.instructions, Instruction{
+			Op:        OpLocalGet,
+			LocalIdx:  idx,
+			LocalName: ident.Name,
+		})
+
+		// Compile RHS expression
+		if err := b.compileExpr(s.Rhs[0], targetType); err != nil {
+			return err
+		}
+
+		var binOp token.Token
+		switch s.Tok {
+		case token.ADD_ASSIGN:
+			binOp = token.ADD
+		case token.SUB_ASSIGN:
+			binOp = token.SUB
+		case token.MUL_ASSIGN:
+			binOp = token.MUL
+		case token.QUO_ASSIGN:
+			binOp = token.QUO
+		case token.REM_ASSIGN:
+			binOp = token.REM
+		}
+
+		opCode, err := binaryOpCode(binOp, targetType)
+		if err != nil {
+			return err
+		}
+		b.instructions = append(b.instructions, Instruction{Op: opCode})
+
+		// Emit: local.set $ident
+		b.instructions = append(b.instructions, Instruction{
+			Op:        OpLocalSet,
+			LocalIdx:  idx,
+			LocalName: ident.Name,
+		})
+		return nil
+
+	default:
+		return fmt.Errorf("unsupported assignment operator: %s", s.Tok)
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// buildVarDecl compiles var declaration statements inside function bodies.
+func (b *builder) buildVarDecl(genDecl *ast.GenDecl) error {
+	for _, spec := range genDecl.Specs {
+		vspec, ok := spec.(*ast.ValueSpec)
+		if !ok {
+			continue
+		}
+
+		var explicitType string
+		if vspec.Type != nil {
+			t, err := typeName(vspec.Type)
+			if err != nil {
+				return err
+			}
+			explicitType = t
+		}
+		if len(vspec.Values) > 0 && len(vspec.Values) != len(vspec.Names) {
+			return fmt.Errorf("assignment mismatch: %d variables but %d values", len(vspec.Names), len(vspec.Values))
+		}
+
+		for i, name := range vspec.Names {
+			if _, exists := b.locals[name.Name]; exists {
+				return fmt.Errorf("%s redeclared in this block", name.Name)
+			}
+
+			goType := explicitType
+			if goType == "" && i < len(vspec.Values) {
+				goType = b.resolveExprType(vspec.Values[i], "")
+			}
+			if goType == "" {
+				goType = "int32"
+			}
+			wasmType, err := ParseGoType(goType)
+			if err != nil {
+				return err
+			}
+
+			// Compile the value before the name enters scope.
+			if i < len(vspec.Values) {
+				if err := b.compileExpr(vspec.Values[i], goType); err != nil {
+					return err
+				}
+			}
+
+			idx := uint32(len(b.locals))
+			b.locals[name.Name] = idx
+			b.localTypes[name.Name] = goType
+			b.localsList = append(b.localsList, Local{
+				Name:   name.Name,
+				GoType: goType,
+				Type:   wasmType,
+			})
+
+			if i < len(vspec.Values) {
+				b.instructions = append(b.instructions, Instruction{
+					Op:        OpLocalSet,
+					LocalIdx:  idx,
+					LocalName: name.Name,
+				})
+			}
+		}
+	}
+	return nil
 }
 
 // ------------------------------------------------------------------------------------------------
