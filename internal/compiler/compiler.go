@@ -56,8 +56,27 @@ func (c *Compiler) Compile(src string) ([]byte, error) {
 		}
 		code.WriteByte(byte(ir.OpEnd))
 
+		type localGroup struct {
+			count uint32
+			typ   byte
+		}
+
+		var groups []localGroup
+		for _, loc := range fn.Locals {
+			t := byte(loc.Type)
+			if len(groups) > 0 && groups[len(groups)-1].typ == t {
+				groups[len(groups)-1].count++
+			} else {
+				groups = append(groups, localGroup{count: 1, typ: t})
+			}
+		}
+
 		var body bytes.Buffer
-		putUvarint(&body, 0) // 0 local variable declarations for now
+		putUvarint(&body, uint32(len(groups)))
+		for _, g := range groups {
+			putUvarint(&body, g.count)
+			body.WriteByte(g.typ)
+		}
 		body.Write(code.Bytes())
 
 		typeIndex := uint32(len(signatures))

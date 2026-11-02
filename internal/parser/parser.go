@@ -44,6 +44,13 @@ func (p *Parser) Parse(src string) (string, error) {
 		}
 
 		p.emit("  (func $%s (export %q)%s%s", fn.Name, fn.Name, paramStr, resultStr)
+
+		// local variables first
+		for _, loc := range fn.Locals {
+			p.emit("    (local $%s %s)", loc.Name, loc.Type)
+		}
+
+		// now the actual instructions
 		for _, inst := range fn.Instructions {
 			wat := inst.WatString()
 			if wat != "" {
