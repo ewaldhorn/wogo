@@ -72,6 +72,11 @@ func (inst Instruction) WatString() string {
 			return fmt.Sprintf("local.get $%s", inst.LocalName)
 		}
 		return fmt.Sprintf("local.get %d", inst.LocalIdx)
+	case OpLocalSet:
+		if inst.LocalName != "" {
+			return fmt.Sprintf("local.set $%s", inst.LocalName)
+		}
+		return fmt.Sprintf("local.set %d", inst.LocalIdx)
 	case OpI32Const:
 		if inst.Raw != "" {
 			return fmt.Sprintf("i32.const %s", inst.Raw)
@@ -152,6 +157,8 @@ func (inst Instruction) WatString() string {
 		return "f64.mul"
 	case OpF64Div:
 		return "f64.div"
+	case OpDrop:
+		return "drop"
 	case OpReturn:
 		return "return"
 	default:
