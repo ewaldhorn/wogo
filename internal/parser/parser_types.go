@@ -64,6 +64,12 @@ func (p *Parser) resolveExprType(expr ast.Expr, targetType string) string {
 		if t, ok := p.localTypes[e.Name]; ok {
 			return t
 		}
+		if cDef, ok := p.lookupConstant(e.Name); ok {
+			if cDef.constType != "" {
+				return cDef.constType
+			}
+			return p.resolveExprType(cDef.constantExpr, targetType)
+		}
 		return targetType
 
 	case *ast.BasicLit:
@@ -97,6 +103,15 @@ func (p *Parser) resolveExprType(expr ast.Expr, targetType string) string {
 			return "bool"
 		}
 		return p.resolveExprType(e.X, targetType)
+
+	case *ast.SelectorExpr:
+		if x, ok := e.X.(*ast.Ident); ok && x.Name == "math" {
+			switch e.Sel.Name {
+			case "Pi", "E", "Phi":
+				return "float64"
+			}
+		}
+		return targetType
 
 	default:
 		return targetType

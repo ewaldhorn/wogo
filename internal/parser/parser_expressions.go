@@ -22,7 +22,7 @@ func (p *Parser) parseExprWithTarget(expr ast.Expr, targetType string) error {
 
 	switch e := expr.(type) {
 	case *ast.Ident:
-		return p.parseIdent(e)
+		return p.parseIdent(e, exprType)
 	case *ast.BasicLit:
 		return p.parseBasicLit(e, exprType)
 	case *ast.BinaryExpr:
@@ -31,6 +31,8 @@ func (p *Parser) parseExprWithTarget(expr ast.Expr, targetType string) error {
 		return p.parseUnaryExpr(e, exprType)
 	case *ast.ParenExpr:
 		return p.parseExprWithTarget(e.X, exprType)
+	case *ast.SelectorExpr:
+		return p.parseSelectorExpr(e, exprType)
 	default:
 		return fmt.Errorf("unsupported expression type: %T", expr)
 	}
@@ -39,7 +41,7 @@ func (p *Parser) parseExprWithTarget(expr ast.Expr, targetType string) error {
 // ------------------------------------------------------------------------------------------------
 // parseIdent tries to parse an identifier.
 // TODO: Error handling is basically not there.
-func (p *Parser) parseIdent(e *ast.Ident) error {
+func (p *Parser) parseIdent(e *ast.Ident, exprType string) error {
 	if e.Name == "true" {
 		p.emit("i32.const 1")
 		return nil
@@ -47,6 +49,14 @@ func (p *Parser) parseIdent(e *ast.Ident) error {
 	if e.Name == "false" {
 		p.emit("i32.const 0")
 		return nil
+	}
+
+	if cDef, ok := p.lookupConstant(e.Name); ok {
+		targetType := exprType
+		if cDef.constType != "" {
+			targetType = cDef.constType
+		}
+		return p.parseExprWithTarget(cDef.constantExpr, targetType)
 	}
 
 	wasmName, ok := p.locals[e.Name]
@@ -60,10 +70,18 @@ func (p *Parser) parseIdent(e *ast.Ident) error {
 
 // ------------------------------------------------------------------------------------------------
 // parseBasicLit tries to parse literals.
-// TODO: This might need tweaking when I finally get string literals. Alos not sure about cosntants.
+// TODO: This might need tweaking when I finally get string literals. Alos not sure about constants.
 func (p *Parser) parseBasicLit(e *ast.BasicLit, exprType string) error {
 	switch e.Kind {
 	case token.INT:
+		if exprType == "float64" || exprType == "float32" {
+			prefix := "f64"
+			if exprType == "float32" {
+				prefix = "f32"
+			}
+			p.emit("%s.const %s.0", prefix, e.Value)
+			return nil
+		}
 		p.emit("%s.const %s", wasmTypePrefix(exprType), e.Value)
 		return nil
 
@@ -78,6 +96,27 @@ func (p *Parser) parseBasicLit(e *ast.BasicLit, exprType string) error {
 	default:
 		return fmt.Errorf("unsupported literal kind: %v", e.Kind)
 	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// parseSelectorExpr parses package selectors such as math.Pi.
+// I don't HAVE a stdlib yet, so, for now, this is it.
+// TODO: Create a proper stdlib and then get rid of this hack.
+func (p *Parser) parseSelectorExpr(e *ast.SelectorExpr, exprType string) error {
+	if x, ok := e.X.(*ast.Ident); ok && x.Name == "math" {
+		switch e.Sel.Name {
+		case "Pi":
+			p.emit("f64.const 3.141592653589793")
+			return nil
+		case "E":
+			p.emit("f64.const 2.718281828459045")
+			return nil
+		case "Phi":
+			p.emit("f64.const 1.618033988749895")
+			return nil
+		}
+	}
+	return fmt.Errorf("unsupported selector expression: %v.%s", e.X, e.Sel.Name)
 }
 
 // ------------------------------------------------------------------------------------------------
