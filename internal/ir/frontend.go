@@ -41,7 +41,9 @@ func BuildModule(src string) (*Module, error) {
 	// Find package-level constants
 	for _, decl := range node.Decls {
 		if genDecl, ok := decl.(*ast.GenDecl); ok && genDecl.Tok == token.CONST {
-			mapConstants(genDecl, b.packageConstants)
+			if err := mapConstants(genDecl, b.packageConstants); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -76,7 +78,9 @@ func (b *builder) buildFunction(fn *ast.FuncDecl) (*Function, error) {
 		for _, stmt := range fn.Body.List {
 			if declStmt, ok := stmt.(*ast.DeclStmt); ok {
 				if genDecl, ok := declStmt.Decl.(*ast.GenDecl); ok && genDecl.Tok == token.CONST {
-					mapConstants(genDecl, b.localConstants)
+					if err := mapConstants(genDecl, b.localConstants); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
@@ -88,8 +92,14 @@ func (b *builder) buildFunction(fn *ast.FuncDecl) (*Function, error) {
 
 	if fn.Type.Params != nil {
 		for _, field := range fn.Type.Params.List {
-			goType := typeName(field.Type)
-			wasmType := ParseGoType(goType)
+			goType, err := typeName(field.Type)
+			if err != nil {
+				return nil, err
+			}
+			wasmType, err := ParseGoType(goType)
+			if err != nil {
+				return nil, err
+			}
 			for _, name := range field.Names {
 				b.locals[name.Name] = uint32(len(b.locals))
 				b.localTypes[name.Name] = goType
@@ -104,9 +114,17 @@ func (b *builder) buildFunction(fn *ast.FuncDecl) (*Function, error) {
 
 	if fn.Type.Results != nil {
 		for _, field := range fn.Type.Results.List {
-			b.returnType = typeName(field.Type)
+			goType, err := typeName(field.Type)
+			if err != nil {
+				return nil, err
+			}
+			wasmType, err := ParseGoType(goType)
+			if err != nil {
+				return nil, err
+			}
+			b.returnType = goType
 			function.ReturnType = b.returnType
-			function.Results = append(function.Results, ParseGoType(b.returnType))
+			function.Results = append(function.Results, wasmType)
 		}
 	}
 
@@ -231,12 +249,14 @@ func (b *builder) compileBasicLit(e *ast.BasicLit, exprType string) error {
 				F64: float64(val),
 				Raw: e.Value,
 			})
-		default:
+		case "int32", "int", "uint32", "uint", "bool":
 			b.instructions = append(b.instructions, Instruction{
 				Op:  OpI32Const,
 				I32: int32(val),
 				Raw: e.Value,
 			})
+		default:
+			return fmt.Errorf("unsupported type %q for integer literal", exprType)
 		}
 		return nil
 
@@ -440,7 +460,7 @@ func (b *builder) lookupConstant(name string) (constantDef, bool) {
 }
 
 // ------------------------------------------------------------------------------------------------
-func mapConstants(genDecl *ast.GenDecl, target map[string]constantDef) {
+func mapConstants(genDecl *ast.GenDecl, target map[string]constantDef) error {
 	for _, spec := range genDecl.Specs {
 		vspec, ok := spec.(*ast.ValueSpec)
 		if !ok {
@@ -448,7 +468,14 @@ func mapConstants(genDecl *ast.GenDecl, target map[string]constantDef) {
 		}
 		var explicitType string
 		if vspec.Type != nil {
-			explicitType = typeName(vspec.Type)
+			t, err := typeName(vspec.Type)
+			if err != nil {
+				return err
+			}
+			if _, err := ParseGoType(t); err != nil {
+				return err
+			}
+			explicitType = t
 		}
 		for i, name := range vspec.Names {
 			if i < len(vspec.Values) {
@@ -459,14 +486,18 @@ func mapConstants(genDecl *ast.GenDecl, target map[string]constantDef) {
 			}
 		}
 	}
+	return nil
 }
 
 // ------------------------------------------------------------------------------------------------
-func typeName(expr ast.Expr) string {
+// typeName renders a Go AST type expression as a type name. Only plain
+// identifiers are supported; anything else (pointers, arrays, ...) is an
+// error rather than a silent int32.
+func typeName(expr ast.Expr) (string, error) {
 	if ident, ok := expr.(*ast.Ident); ok {
-		return ident.Name
+		return ident.Name, nil
 	}
-	return "int32"
+	return "", fmt.Errorf("unsupported type expression %T", expr)
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -498,7 +529,20 @@ func binaryOpCode(op token.Token, exprType string) (OpCode, error) {
 		case token.REM:
 			return OpI64RemU, nil
 		}
-	case "uint32":
+	case "int32", "int", "bool":
+		switch op {
+		case token.ADD:
+			return OpI32Add, nil
+		case token.SUB:
+			return OpI32Sub, nil
+		case token.MUL:
+			return OpI32Mul, nil
+		case token.QUO:
+			return OpI32DivS, nil
+		case token.REM:
+			return OpI32RemS, nil
+		}
+	case "uint32", "uint":
 		switch op {
 		case token.ADD:
 			return OpI32Add, nil
@@ -534,18 +578,7 @@ func binaryOpCode(op token.Token, exprType string) (OpCode, error) {
 			return OpF64Div, nil
 		}
 	default:
-		switch op {
-		case token.ADD:
-			return OpI32Add, nil
-		case token.SUB:
-			return OpI32Sub, nil
-		case token.MUL:
-			return OpI32Mul, nil
-		case token.QUO:
-			return OpI32DivS, nil
-		case token.REM:
-			return OpI32RemS, nil
-		}
+		return 0, fmt.Errorf("unsupported type %q for binary operator %s", exprType, op)
 	}
 	return 0, fmt.Errorf("unsupported binary operator %s for type %s", op, exprType)
 }
