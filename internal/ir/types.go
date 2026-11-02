@@ -121,6 +121,26 @@ func (inst Instruction) WatString() string {
 		return "i32.rem_u"
 	case OpI32Eqz:
 		return "i32.eqz"
+	case OpI32Eq:
+		return "i32.eq"
+	case OpI32Ne:
+		return "i32.ne"
+	case OpI32LtS:
+		return "i32.lt_s"
+	case OpI32LtU:
+		return "i32.lt_u"
+	case OpI32GtS:
+		return "i32.gt_s"
+	case OpI32GtU:
+		return "i32.gt_u"
+	case OpI32LeS:
+		return "i32.le_s"
+	case OpI32LeU:
+		return "i32.le_u"
+	case OpI32GeS:
+		return "i32.ge_s"
+	case OpI32GeU:
+		return "i32.ge_u"
 	case OpI64Add:
 		return "i64.add"
 	case OpI64Sub:
@@ -137,6 +157,26 @@ func (inst Instruction) WatString() string {
 		return "i64.rem_u"
 	case OpI64Eqz:
 		return "i64.eqz"
+	case OpI64Eq:
+		return "i64.eq"
+	case OpI64Ne:
+		return "i64.ne"
+	case OpI64LtS:
+		return "i64.lt_s"
+	case OpI64LtU:
+		return "i64.lt_u"
+	case OpI64GtS:
+		return "i64.gt_s"
+	case OpI64GtU:
+		return "i64.gt_u"
+	case OpI64LeS:
+		return "i64.le_s"
+	case OpI64LeU:
+		return "i64.le_u"
+	case OpI64GeS:
+		return "i64.ge_s"
+	case OpI64GeU:
+		return "i64.ge_u"
 	case OpF32Neg:
 		return "f32.neg"
 	case OpF32Add:
@@ -147,6 +187,18 @@ func (inst Instruction) WatString() string {
 		return "f32.mul"
 	case OpF32Div:
 		return "f32.div"
+	case OpF32Eq:
+		return "f32.eq"
+	case OpF32Ne:
+		return "f32.ne"
+	case OpF32Lt:
+		return "f32.lt"
+	case OpF32Gt:
+		return "f32.gt"
+	case OpF32Le:
+		return "f32.le"
+	case OpF32Ge:
+		return "f32.ge"
 	case OpF64Neg:
 		return "f64.neg"
 	case OpF64Add:
@@ -157,6 +209,18 @@ func (inst Instruction) WatString() string {
 		return "f64.mul"
 	case OpF64Div:
 		return "f64.div"
+	case OpF64Eq:
+		return "f64.eq"
+	case OpF64Ne:
+		return "f64.ne"
+	case OpF64Lt:
+		return "f64.lt"
+	case OpF64Gt:
+		return "f64.gt"
+	case OpF64Le:
+		return "f64.le"
+	case OpF64Ge:
+		return "f64.ge"
 	case OpDrop:
 		return "drop"
 	case OpReturn:
