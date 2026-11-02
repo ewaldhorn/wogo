@@ -19,6 +19,21 @@
         <ul class="faq" role="list">
             <ul>
                 <li>
+                    <h3>Mon 2 Nov 2026, 10:45</h3>
+                    <p>
+                        So much code duplication. I'm working on bringing and experimental branch into
+                        main where I deduped a lot of code. Parser and Compiler does a lot of the same
+                        work, and after doing some reading about how LLVM works, I figured out I needed
+                        an intermediate step between WAT and WASM generation.
+                    </p>
+                    <p>
+                        The ir module contains the itermediate representation the process. Pretty much
+                        a token translation that's ready to be processed into WAT or WASM format. From
+                        my reading on [Wikipedia](https://en.wikipedia.org/wiki/Intermediate_representation),
+                        I am moving in the right direction, more or less.
+                    </p>
+                </li>
+                <li>
                     <h3>Mon 2 Nov 2026, 10:00</h3>
                     <p>
                         Constants! I've been wanting to get to this for a while now, it's something I
