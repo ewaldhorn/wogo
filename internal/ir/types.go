@@ -34,18 +34,19 @@ func (t Type) String() string {
 
 // ------------------------------------------------------------------------------------------------
 // ParseGoType maps a Go type name to a WebAssembly value Type.
-func ParseGoType(name string) Type {
+// Go's int and uint are explicit i32 and anything else now errors correctly, I hope.
+func ParseGoType(name string) (Type, error) {
 	switch name {
-	case "int32", "uint32", "bool":
-		return TypeI32
+	case "int32", "int", "uint32", "uint", "bool":
+		return TypeI32, nil
 	case "int64", "uint64":
-		return TypeI64
+		return TypeI64, nil
 	case "float32":
-		return TypeF32
+		return TypeF32, nil
 	case "float64":
-		return TypeF64
+		return TypeF64, nil
 	default:
-		return TypeI32
+		return 0, fmt.Errorf("unsupported type %q", name)
 	}
 }
 
