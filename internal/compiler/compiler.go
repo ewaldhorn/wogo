@@ -3,56 +3,69 @@ package compiler
 import (
 	"bytes"
 	"fmt"
-	"go/ast"
-	goparser "go/parser"
-	"go/token"
+	"wogo/internal/ir"
 )
 
 // ------------------------------------------------------------------------------------------------
-// Compiler translates Go source code into WebAssembly binary bytecode (.wasm).
-type Compiler struct {
-	locals     map[string]uint32
-	localTypes map[string]string
-	returnType string
+// funcSignature holds parameters and results type bytes for a function type in WASM.
+type funcSignature struct {
+	params  []byte
+	results []byte
 }
+
+// ------------------------------------------------------------------------------------------------
+// compiledFunction holds the name, typeIndex, and encoded body of a function.
+type compiledFunction struct {
+	name      string
+	typeIndex uint32
+	body      []byte
+}
+
+// ------------------------------------------------------------------------------------------------
+// Compiler translates Go source code into WebAssembly binary bytecode (.wasm).
+type Compiler struct{}
 
 // ------------------------------------------------------------------------------------------------
 func NewCompiler() *Compiler {
-	return &Compiler{
-		locals:     make(map[string]uint32),
-		localTypes: make(map[string]string),
-	}
+	return &Compiler{}
 }
 
 // ------------------------------------------------------------------------------------------------
-// Compile compiles Go source code into WebAssembly binary format bytes.
+// Compile compiles Go source code into WebAssembly binary format bytes using the IR frontend.
 func (c *Compiler) Compile(src string) ([]byte, error) {
-	fset := token.NewFileSet()
-	node, err := goparser.ParseFile(fset, "calc.go", src, 0)
+	mod, err := ir.BuildModule(src)
 	if err != nil {
-		return nil, fmt.Errorf("parse go source: %w", err)
+		return nil, err
 	}
 
 	var signatures []funcSignature
 	var functions []compiledFunction
 
-	for _, decl := range node.Decls {
-		fn, ok := decl.(*ast.FuncDecl)
-		if !ok {
-			continue
+	for _, fn := range mod.Functions {
+		sig := funcSignature{}
+		for _, p := range fn.Params {
+			sig.params = append(sig.params, byte(p.Type))
+		}
+		for _, r := range fn.Results {
+			sig.results = append(sig.results, byte(r))
 		}
 
-		sig, body, err := c.compileFunc(fn)
-		if err != nil {
-			return nil, fmt.Errorf("compile function %s: %w", fn.Name.Name, err)
+		var code bytes.Buffer
+		for _, inst := range fn.Instructions {
+			ir.EncodeInstruction(&code, inst)
 		}
+		code.WriteByte(byte(ir.OpEnd))
+
+		var body bytes.Buffer
+		putUvarint(&body, 0) // 0 local variable declarations for now
+		body.Write(code.Bytes())
 
 		typeIndex := uint32(len(signatures))
 		signatures = append(signatures, sig)
 		functions = append(functions, compiledFunction{
-			name:      fn.Name.Name,
+			name:      fn.Name,
 			typeIndex: typeIndex,
-			body:      body,
+			body:      body.Bytes(),
 		})
 	}
 
@@ -60,8 +73,7 @@ func (c *Compiler) Compile(src string) ([]byte, error) {
 }
 
 // ------------------------------------------------------------------------------------------------
-// assembleModule puts together a wasm module with the header and all the sections
-// TODO: Import section still baffles me.
+// assembleModule puts together a wasm module with the header and all the sections.
 func (c *Compiler) assembleModule(signatures []funcSignature, functions []compiledFunction) ([]byte, error) {
 	var module bytes.Buffer
 
