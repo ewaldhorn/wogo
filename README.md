@@ -24,8 +24,8 @@ I plan to have some [docs](https://ewaldhorn.github.io/wogo/) that I will try to
 
 I use Go for development with WasmTime for testing and Wat2Wasm as a reference compiler to sanity check my output.
 
-- [Go](https://go.dev/) (1.27.3)
-- [WasmTime](https://wasmtime.dev/) (50.0.1)
+- [Go](https://go.dev/) (1.27.4)
+- [WasmTime](https://wasmtime.dev/) (51.0.0)
 - [Wat2Wasm](https://github.com/webassembly/wabt) (1.0.42)
 
 ## Acknowledgements & Attribution
