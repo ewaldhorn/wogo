@@ -1,0 +1,104 @@
+# Tests for integer `for range` loops
+
+input: testdata/functions/for_range.go
+output: tmp/for_range.wat
+
+command: CountOnly
+signature: i32 -> i32
+arguments: 5
+expected: 5
+
+command: CountOnly
+signature: i32 -> i32
+arguments: 0
+expected: 0
+
+command: CountOnly
+signature: i32 -> i32
+arguments: -3
+expected: 0
+
+command: SumRange
+signature: i32 -> i32
+arguments: 5
+expected: 10
+
+command: SumRange
+signature: i32 -> i32
+arguments: 0
+expected: 0
+
+command: SumRange
+signature: i32 -> i32
+arguments: -2
+expected: 0
+
+command: SumRangeLiteral
+signature: -> i32
+arguments:
+expected: 15
+
+command: SumRangeI64
+signature: i64 -> i64
+arguments: 5
+expected: 10
+
+command: SumRangeI64
+signature: i64 -> i64
+arguments: -1
+expected: 0
+
+command: SumRangeU32
+signature: i32 -> i32
+arguments: 5
+expected: 10
+
+command: SumRangeU32
+signature: i32 -> i32
+arguments: 0
+expected: 0
+
+command: RangeBreakContinue
+signature: i32 -> i32
+arguments: 10
+expected: 6
+
+command: RangeBreakContinue
+signature: i32 -> i32
+arguments: 5
+expected: 6
+
+command: RangeMutateTargetAndKey
+signature: i32 -> i32
+arguments: 4
+expected: 6
+
+command: RangeAssignExisting
+signature: i32 -> i32
+arguments: 5
+expected: 4
+
+command: RangeAssignExisting
+signature: i32 -> i32
+arguments: 0
+expected: -1
+
+command: RangeBlankAssign
+signature: i32 -> i32
+arguments: 4
+expected: 8
+
+command: RangeBlankAssign
+signature: i32 -> i32
+arguments: 0
+expected: 0
+
+command: RangeSequentialAndNested
+signature: i32 i32 -> i32
+arguments: 2 3
+expected: 37
+
+command: RangeShadowSelf
+signature: i32 -> i32
+arguments: 5
+expected: 10
