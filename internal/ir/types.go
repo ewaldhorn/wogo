@@ -10,6 +10,7 @@ import (
 // WebAssembly value types.
 type Type byte
 
+// ------------------------------------------------------------------------------------------------
 const (
 	TypeI32 Type = 0x7F
 	TypeI64 Type = 0x7E
@@ -17,6 +18,7 @@ const (
 	TypeF64 Type = 0x7C
 )
 
+// ------------------------------------------------------------------------------------------------
 func (t Type) String() string {
 	switch t {
 	case TypeI32:

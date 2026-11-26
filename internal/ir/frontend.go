@@ -37,6 +37,7 @@ type scope struct {
 	consts map[string]constantDef
 }
 
+// ------------------------------------------------------------------------------------------------
 func (s *scope) has(name string) bool {
 	if _, ok := s.vars[name]; ok {
 		return true
@@ -50,6 +51,7 @@ func (s *scope) has(name string) bool {
 // ------------------------------------------------------------------------------------------------
 type controlFrameKind int
 
+// ------------------------------------------------------------------------------------------------
 const (
 	frameIf controlFrameKind = iota
 	frameLoopExit
@@ -131,14 +133,17 @@ func (b *builder) pushScope() {
 	})
 }
 
+// ------------------------------------------------------------------------------------------------
 func (b *builder) popScope() {
 	b.scopes = b.scopes[:len(b.scopes)-1]
 }
 
+// ------------------------------------------------------------------------------------------------
 func (b *builder) currentScope() *scope {
 	return &b.scopes[len(b.scopes)-1]
 }
 
+// ------------------------------------------------------------------------------------------------
 func (b *builder) allocWasmName(goName string) string {
 	if !b.usedWasmNames[goName] {
 		b.usedWasmNames[goName] = true
@@ -153,6 +158,7 @@ func (b *builder) allocWasmName(goName string) string {
 	}
 }
 
+// ------------------------------------------------------------------------------------------------
 func (b *builder) declareLocal(goName, goType string, wasmType Type) localBinding {
 	idx := b.nextLocalIdx
 	b.nextLocalIdx++
@@ -171,6 +177,7 @@ func (b *builder) declareLocal(goName, goType string, wasmType Type) localBindin
 	return binding
 }
 
+// ------------------------------------------------------------------------------------------------
 func (b *builder) allocTempLocal(prefix, goType string, wasmType Type) localBinding {
 	idx := b.nextLocalIdx
 	b.nextLocalIdx++
@@ -187,6 +194,7 @@ func (b *builder) allocTempLocal(prefix, goType string, wasmType Type) localBind
 	}
 }
 
+// ------------------------------------------------------------------------------------------------
 func isIntegerType(goType string) bool {
 	switch goType {
 	case "int", "int32", "int64", "uint", "uint32", "uint64":
@@ -196,6 +204,7 @@ func isIntegerType(goType string) bool {
 	}
 }
 
+// ------------------------------------------------------------------------------------------------
 func (b *builder) checkAssignable(expr ast.Expr, targetType string) error {
 	resolved := b.resolveExprType(expr, targetType)
 	if resolved == "" {
@@ -210,6 +219,7 @@ func (b *builder) checkAssignable(expr ast.Expr, targetType string) error {
 	return nil
 }
 
+// ------------------------------------------------------------------------------------------------
 func (b *builder) lookupIdent(name string) (localBinding, constantDef, identKind) {
 	if b.constEnv != nil {
 		if cDef, ok := b.constEnv[name]; ok {
@@ -231,6 +241,7 @@ func (b *builder) lookupIdent(name string) (localBinding, constantDef, identKind
 	return localBinding{}, constantDef{}, identNone
 }
 
+// ------------------------------------------------------------------------------------------------
 func (b *builder) snapshotConstants() map[string]constantDef {
 	env := make(map[string]constantDef, len(b.packageConstants))
 	for k, v := range b.packageConstants {
@@ -247,6 +258,7 @@ func (b *builder) snapshotConstants() map[string]constantDef {
 	return env
 }
 
+// ------------------------------------------------------------------------------------------------
 func (b *builder) withConstEnv(cDef constantDef, fn func()) {
 	prev := b.constEnv
 	if cDef.env != nil {
@@ -258,6 +270,7 @@ func (b *builder) withConstEnv(cDef constantDef, fn func()) {
 	b.constEnv = prev
 }
 
+// ------------------------------------------------------------------------------------------------
 func (b *builder) inLoop() bool {
 	for _, f := range b.controlStack {
 		if f == frameLoop {
@@ -267,6 +280,7 @@ func (b *builder) inLoop() bool {
 	return false
 }
 
+// ------------------------------------------------------------------------------------------------
 func (b *builder) zeroConstInstruction(wasmType Type) Instruction {
 	switch wasmType {
 	case TypeI64:
