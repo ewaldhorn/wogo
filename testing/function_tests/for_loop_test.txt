@@ -1,0 +1,85 @@
+# Tests for `for` loops (init, cond, post, break, continue)
+
+input: testdata/functions/for_loop.go
+output: tmp/for_loop.wat
+
+command: SumToN
+signature: i32 -> i32
+arguments: 5
+expected: 15
+
+command: SumToN
+signature: i32 -> i32
+arguments: 0
+expected: 0
+
+command: SumToN
+signature: i32 -> i32
+arguments: 10
+expected: 55
+
+command: Factorial
+signature: i32 -> i32
+arguments: 5
+expected: 120
+
+command: Factorial
+signature: i32 -> i32
+arguments: 1
+expected: 1
+
+command: Factorial
+signature: i32 -> i32
+arguments: 0
+expected: 1
+
+command: SumEven
+signature: i32 -> i32
+arguments: 6
+expected: 12
+
+command: SumEven
+signature: i32 -> i32
+arguments: 5
+expected: 6
+
+command: FindBreak
+signature: i32 -> i32
+arguments: 7
+expected: 7
+
+command: FindBreak
+signature: i32 -> i32
+arguments: 0
+expected: 0
+
+command: NestedLoops
+signature: i32 i32 -> i32
+arguments: 3 4
+expected: 6
+
+command: NestedLoops
+signature: i32 i32 -> i32
+arguments: 2 1
+expected: 2
+
+command: Countdown
+signature: i32 -> i32
+arguments: 5
+expected: 5
+
+command: Countdown
+signature: i32 -> i32
+arguments: 0
+expected: 0
+
+command: CompoundPost
+signature: i32 -> i32
+arguments: 10
+expected: 5
+
+command: CompoundPost
+signature: i32 -> i32
+arguments: 5
+expected: 3
+

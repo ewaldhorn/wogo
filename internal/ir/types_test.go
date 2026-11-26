@@ -133,14 +133,54 @@ func TestInstruction_WatString(t *testing.T) {
 		{"f64.le", Instruction{Op: OpF64Le}, "f64.le"},
 		{"f64.ge", Instruction{Op: OpF64Ge}, "f64.ge"},
 		{"return", Instruction{Op: OpReturn}, "return"},
+		{"unreachable", Instruction{Op: OpUnreachable}, "unreachable"},
 		{"drop", Instruction{Op: OpDrop}, "drop"},
-		{"unrendered op is empty", Instruction{Op: OpEnd}, ""},
+		{"block void", Instruction{Op: OpBlock}, "block"},
+		{"block result", Instruction{Op: OpBlock, BlockType: TypeI32}, "block (result i32)"},
+		{"loop void", Instruction{Op: OpLoop}, "loop"},
+		{"loop result", Instruction{Op: OpLoop, BlockType: TypeI32}, "loop (result i32)"},
+		{"br", Instruction{Op: OpBr, LabelIdx: 2}, "br 2"},
+		{"br_if", Instruction{Op: OpBrIf, LabelIdx: 1}, "br_if 1"},
+		{"if void", Instruction{Op: OpIf}, "if"},
+		{"if result", Instruction{Op: OpIf, BlockType: TypeI32}, "if (result i32)"},
+		{"else", Instruction{Op: OpElse}, "else"},
+		{"end", Instruction{Op: OpEnd}, "end"},
+		{"unrendered op is empty", Instruction{Op: OpCode(0xFF)}, ""},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.inst.WatString(); got != tt.want {
 				t.Errorf("WatString() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+func TestEncodeInstruction_ControlFlow(t *testing.T) {
+	tests := []struct {
+		name string
+		inst Instruction
+		want []byte
+	}{
+		{"block void", Instruction{Op: OpBlock}, []byte{byte(OpBlock), 0x40}},
+		{"block result", Instruction{Op: OpBlock, BlockType: TypeI32}, []byte{byte(OpBlock), byte(TypeI32)}},
+		{"loop void", Instruction{Op: OpLoop}, []byte{byte(OpLoop), 0x40}},
+		{"loop result", Instruction{Op: OpLoop, BlockType: TypeI32}, []byte{byte(OpLoop), byte(TypeI32)}},
+		{"br", Instruction{Op: OpBr, LabelIdx: 2}, []byte{byte(OpBr), 0x02}},
+		{"br_if", Instruction{Op: OpBrIf, LabelIdx: 1}, []byte{byte(OpBrIf), 0x01}},
+		{"if void", Instruction{Op: OpIf}, []byte{byte(OpIf), 0x40}},
+		{"if result", Instruction{Op: OpIf, BlockType: TypeI32}, []byte{byte(OpIf), byte(TypeI32)}},
+		{"else", Instruction{Op: OpElse}, []byte{byte(OpElse)}},
+		{"end", Instruction{Op: OpEnd}, []byte{byte(OpEnd)}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var code bytes.Buffer
+			EncodeInstruction(&code, tt.inst)
+			if !bytes.Equal(code.Bytes(), tt.want) {
+				t.Errorf("EncodeInstruction(%s) = %v, want %v", tt.name, code.Bytes(), tt.want)
 			}
 		})
 	}

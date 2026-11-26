@@ -1,0 +1,80 @@
+# Tests for if / else / else if statements
+
+input: testdata/functions/if_else.go
+output: tmp/if_else.wat
+
+command: Max
+signature: i32 i32 -> i32
+arguments: 10 20
+expected: 20
+
+command: Max
+signature: i32 i32 -> i32
+arguments: 30 15
+expected: 30
+
+command: Max
+signature: i32 i32 -> i32
+arguments: 5 5
+expected: 5
+
+command: Abs
+signature: i32 -> i32
+arguments: -42
+expected: 42
+
+command: Abs
+signature: i32 -> i32
+arguments: 42
+expected: 42
+
+command: Abs
+signature: i32 -> i32
+arguments: 0
+expected: 0
+
+command: Clamp
+signature: i32 i32 i32 -> i32
+arguments: 5 10 20
+expected: 10
+
+command: Clamp
+signature: i32 i32 i32 -> i32
+arguments: 25 10 20
+expected: 20
+
+command: Clamp
+signature: i32 i32 i32 -> i32
+arguments: 15 10 20
+expected: 15
+
+command: WithInit
+signature: i32 -> i32
+arguments: 6
+expected: 12
+
+command: WithInit
+signature: i32 -> i32
+arguments: 4
+expected: 0
+
+command: NestedIf
+signature: i32 i32 -> i32
+arguments: 1 1
+expected: 1
+
+command: NestedIf
+signature: i32 i32 -> i32
+arguments: 1 -1
+expected: 2
+
+command: NestedIf
+signature: i32 i32 -> i32
+arguments: -1 1
+expected: 3
+
+command: NestedIf
+signature: i32 i32 -> i32
+arguments: -1 -1
+expected: 4
+

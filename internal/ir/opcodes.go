@@ -7,11 +7,18 @@ type OpCode byte
 
 const (
 	// Control Flow
-	OpEnd      OpCode = 0x0B
-	OpReturn   OpCode = 0x0F
-	OpDrop     OpCode = 0x1A
-	OpLocalGet OpCode = 0x20
-	OpLocalSet OpCode = 0x21
+	OpUnreachable OpCode = 0x00
+	OpBlock       OpCode = 0x02
+	OpLoop        OpCode = 0x03
+	OpIf          OpCode = 0x04
+	OpElse        OpCode = 0x05
+	OpEnd         OpCode = 0x0B
+	OpBr          OpCode = 0x0C
+	OpBrIf        OpCode = 0x0D
+	OpReturn      OpCode = 0x0F
+	OpDrop        OpCode = 0x1A
+	OpLocalGet    OpCode = 0x20
+	OpLocalSet    OpCode = 0x21
 
 	// Constants
 	OpI32Const OpCode = 0x41

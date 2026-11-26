@@ -15,6 +15,16 @@ type constantDef struct {
 }
 
 // ------------------------------------------------------------------------------------------------
+type controlFrameKind int
+
+const (
+	frameIf controlFrameKind = iota
+	frameLoopExit
+	frameLoop
+	frameLoopCont
+)
+
+// ------------------------------------------------------------------------------------------------
 // builder coordinates lowering Go AST to an IR module.
 type builder struct {
 	packageConstants map[string]constantDef
@@ -24,6 +34,7 @@ type builder struct {
 	localsList       []Local
 	returnType       string
 	instructions     []Instruction
+	controlStack     []controlFrameKind
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -72,6 +83,7 @@ func (b *builder) buildFunction(fn *ast.FuncDecl) (*Function, error) {
 	b.localTypes = make(map[string]string)
 	b.localConstants = make(map[string]constantDef)
 	b.localsList = nil
+	b.controlStack = nil
 	b.returnType = "int32"
 	b.instructions = nil
 
@@ -138,14 +150,49 @@ func (b *builder) buildFunction(fn *ast.FuncDecl) (*Function, error) {
 		}
 	}
 
+	if len(function.Results) > 0 {
+		if len(b.instructions) == 0 || b.instructions[len(b.instructions)-1].Op != OpReturn {
+			b.instructions = append(b.instructions, Instruction{Op: OpUnreachable})
+		}
+	}
+
 	function.Locals = b.localsList
 	function.Instructions = b.instructions
 	return function, nil
 }
 
 // ------------------------------------------------------------------------------------------------
+// branchDepth returns the relative WebAssembly label index for the target frame kind,
+// searching from innermost (top of stack) to outermost.
+func (b *builder) branchDepth(target controlFrameKind) (uint32, error) {
+	for i := len(b.controlStack) - 1; i >= 0; i-- {
+		if b.controlStack[i] == target {
+			return uint32(len(b.controlStack) - 1 - i), nil
+		}
+	}
+	return 0, fmt.Errorf("target control frame not found")
+}
+
+// ------------------------------------------------------------------------------------------------
 func (b *builder) buildStatement(stmt ast.Stmt) error {
 	switch s := stmt.(type) {
+	case *ast.EmptyStmt:
+		return nil
+	case *ast.BlockStmt:
+		for _, inner := range s.List {
+			if err := b.buildStatement(inner); err != nil {
+				return err
+			}
+		}
+		return nil
+	case *ast.IfStmt:
+		return b.buildIfStmt(s)
+	case *ast.ForStmt:
+		return b.buildForStmt(s)
+	case *ast.BranchStmt:
+		return b.buildBranchStmt(s)
+	case *ast.IncDecStmt:
+		return b.buildIncDecStmt(s)
 	case *ast.DeclStmt:
 		genDecl, ok := s.Decl.(*ast.GenDecl)
 		if !ok {
@@ -171,6 +218,208 @@ func (b *builder) buildStatement(stmt ast.Stmt) error {
 	default:
 		return fmt.Errorf("unsupported statement type: %T", stmt)
 	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// buildIfStmt compiles an if statement, including optional init statement and else branch.
+func (b *builder) buildIfStmt(s *ast.IfStmt) error {
+	if s.Init != nil {
+		if err := b.buildStatement(s.Init); err != nil {
+			return err
+		}
+	}
+
+	condType := b.resolveExprType(s.Cond, "bool")
+	if condType != "bool" {
+		return fmt.Errorf("non-bool %s used as if condition", condType)
+	}
+
+	if err := b.compileExpr(s.Cond, "bool"); err != nil {
+		return err
+	}
+
+	b.controlStack = append(b.controlStack, frameIf)
+	b.instructions = append(b.instructions, Instruction{Op: OpIf})
+
+	if err := b.buildStatement(s.Body); err != nil {
+		return err
+	}
+
+	if s.Else != nil {
+		b.instructions = append(b.instructions, Instruction{Op: OpElse})
+		if err := b.buildStatement(s.Else); err != nil {
+			return err
+		}
+	}
+
+	b.controlStack = b.controlStack[:len(b.controlStack)-1]
+	b.instructions = append(b.instructions, Instruction{Op: OpEnd})
+	return nil
+}
+
+// ------------------------------------------------------------------------------------------------
+// buildForStmt compiles a for loop (init; cond; post; body) into WebAssembly block/loop structure.
+// Structured layout:
+//
+//	[init]
+//	block (exit)
+//	  loop (head)
+//	    [cond] -> eqz -> br_if (exit)
+//	    block (continue)
+//	      [body]
+//	    end
+//	    [post]
+//	    br (head)
+//	  end
+//	end
+func (b *builder) buildForStmt(s *ast.ForStmt) error {
+	if s.Init != nil {
+		if err := b.buildStatement(s.Init); err != nil {
+			return err
+		}
+	}
+
+	// Outer block for break: branching here exits the loop.
+	b.controlStack = append(b.controlStack, frameLoopExit)
+	b.instructions = append(b.instructions, Instruction{Op: OpBlock})
+
+	// Loop header: branching here restarts the loop iteration.
+	b.controlStack = append(b.controlStack, frameLoop)
+	b.instructions = append(b.instructions, Instruction{Op: OpLoop})
+
+	// Condition check: if condition is false, break out to loop exit.
+	if s.Cond != nil {
+		condType := b.resolveExprType(s.Cond, "bool")
+		if condType != "bool" {
+			return fmt.Errorf("non-bool %s used as for condition", condType)
+		}
+		if err := b.compileExpr(s.Cond, "bool"); err != nil {
+			return err
+		}
+		b.instructions = append(b.instructions, Instruction{Op: OpI32Eqz})
+		depth, err := b.branchDepth(frameLoopExit)
+		if err != nil {
+			return err
+		}
+		b.instructions = append(b.instructions, Instruction{Op: OpBrIf, LabelIdx: depth})
+	}
+
+	// Inner block for continue: branching here jumps to the post statement.
+	b.controlStack = append(b.controlStack, frameLoopCont)
+	b.instructions = append(b.instructions, Instruction{Op: OpBlock})
+
+	if err := b.buildStatement(s.Body); err != nil {
+		return err
+	}
+
+	// Close inner continue block
+	b.controlStack = b.controlStack[:len(b.controlStack)-1]
+	b.instructions = append(b.instructions, Instruction{Op: OpEnd})
+
+	// Execute post statement (if any)
+	if s.Post != nil {
+		if err := b.buildStatement(s.Post); err != nil {
+			return err
+		}
+	}
+
+	// Loop back to header
+	loopDepth, err := b.branchDepth(frameLoop)
+	if err != nil {
+		return err
+	}
+	b.instructions = append(b.instructions, Instruction{Op: OpBr, LabelIdx: loopDepth})
+
+	// Close loop
+	b.controlStack = b.controlStack[:len(b.controlStack)-1]
+	b.instructions = append(b.instructions, Instruction{Op: OpEnd})
+
+	// Close outer block
+	b.controlStack = b.controlStack[:len(b.controlStack)-1]
+	b.instructions = append(b.instructions, Instruction{Op: OpEnd})
+
+	return nil
+}
+
+// ------------------------------------------------------------------------------------------------
+// buildBranchStmt compiles break and continue statements.
+func (b *builder) buildBranchStmt(s *ast.BranchStmt) error {
+	switch s.Tok {
+	case token.BREAK:
+		depth, err := b.branchDepth(frameLoopExit)
+		if err != nil {
+			return fmt.Errorf("break is not in a loop")
+		}
+		b.instructions = append(b.instructions, Instruction{Op: OpBr, LabelIdx: depth})
+		return nil
+	case token.CONTINUE:
+		depth, err := b.branchDepth(frameLoopCont)
+		if err != nil {
+			return fmt.Errorf("continue is not in a loop")
+		}
+		b.instructions = append(b.instructions, Instruction{Op: OpBr, LabelIdx: depth})
+		return nil
+	default:
+		return fmt.Errorf("unsupported branch statement: %v", s.Tok)
+	}
+}
+
+// ------------------------------------------------------------------------------------------------
+// buildIncDecStmt compiles i++ and i-- statements.
+func (b *builder) buildIncDecStmt(s *ast.IncDecStmt) error {
+	ident, ok := s.X.(*ast.Ident)
+	if !ok {
+		return fmt.Errorf("cannot increment/decrement non-identifier: %T", s.X)
+	}
+	idx, ok := b.locals[ident.Name]
+	if !ok {
+		return fmt.Errorf("unknown identifier: %s", ident.Name)
+	}
+	targetType := b.localTypes[ident.Name]
+
+	// Emit: local.get $ident
+	b.instructions = append(b.instructions, Instruction{
+		Op:        OpLocalGet,
+		LocalIdx:  idx,
+		LocalName: ident.Name,
+	})
+
+	// Emit constant 1 of targetType
+	switch targetType {
+	case "int32", "int", "uint32", "uint":
+		b.instructions = append(b.instructions, Instruction{Op: OpI32Const, I32: 1})
+	case "int64", "uint64":
+		b.instructions = append(b.instructions, Instruction{Op: OpI64Const, I64: 1})
+	case "float32":
+		b.instructions = append(b.instructions, Instruction{Op: OpF32Const, F32: 1.0})
+	case "float64":
+		b.instructions = append(b.instructions, Instruction{Op: OpF64Const, F64: 1.0})
+	default:
+		return fmt.Errorf("unsupported type %s for ++/--", targetType)
+	}
+
+	var binOp token.Token
+	if s.Tok == token.INC {
+		binOp = token.ADD
+	} else if s.Tok == token.DEC {
+		binOp = token.SUB
+	} else {
+		return fmt.Errorf("unsupported inc/dec operator: %v", s.Tok)
+	}
+
+	opCode, err := binaryOpCode(binOp, targetType)
+	if err != nil {
+		return err
+	}
+	b.instructions = append(b.instructions, Instruction{Op: opCode})
+
+	// Store result: local.set $ident
+	b.instructions = append(b.instructions, Instruction{
+		Op:        OpLocalSet,
+		LocalIdx:  idx,
+		LocalName: ident.Name,
+	})
+	return nil
 }
 
 // ------------------------------------------------------------------------------------------------

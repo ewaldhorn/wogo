@@ -54,8 +54,10 @@ func ParseGoType(name string) (Type, error) {
 // Instruction represents a single low-level WebAssembly instruction in the IR.
 type Instruction struct {
 	Op        OpCode
+	BlockType Type
 	LocalIdx  uint32
 	LocalName string
+	LabelIdx  uint32
 	I32       int32
 	I64       int64
 	F32       float32
@@ -225,6 +227,31 @@ func (inst Instruction) WatString() string {
 		return "drop"
 	case OpReturn:
 		return "return"
+	case OpUnreachable:
+		return "unreachable"
+	case OpBlock:
+		if inst.BlockType != 0 {
+			return fmt.Sprintf("block (result %s)", inst.BlockType)
+		}
+		return "block"
+	case OpLoop:
+		if inst.BlockType != 0 {
+			return fmt.Sprintf("loop (result %s)", inst.BlockType)
+		}
+		return "loop"
+	case OpBr:
+		return fmt.Sprintf("br %d", inst.LabelIdx)
+	case OpBrIf:
+		return fmt.Sprintf("br_if %d", inst.LabelIdx)
+	case OpIf:
+		if inst.BlockType != 0 {
+			return fmt.Sprintf("if (result %s)", inst.BlockType)
+		}
+		return "if"
+	case OpElse:
+		return "else"
+	case OpEnd:
+		return "end"
 	default:
 		return ""
 	}
